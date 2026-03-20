@@ -292,7 +292,7 @@ export default function SettingsPage() {
                     <Row label="Privacy Policy" desc="How SpiceGames handles your data — we collect nothing">
                         <div style={{ display: 'flex', gap: 8 }}>
                             {/* Online hosted version — replace # with your URL when published */}
-                            <a href="https://github.com/ash-kernel/spicegames/blob/main/PRIVACY_POLICY.md"
+                            <a href="https://ash-kernel.github.io/SpiceGames/#legal"
                                 target="_blank" rel="noreferrer" style={linkStyle}>
                                 View ↗
                             </a>
@@ -301,7 +301,7 @@ export default function SettingsPage() {
                     <Row label="Terms of Service" desc="Rules and conditions for using SpiceGames" last>
                         <div style={{ display: 'flex', gap: 8 }}>
                             {/* Online hosted version — replace # with your URL when published */}
-                            <a href="https://github.com/ash-kernel/spicegames/blob/main/TERMS_OF_SERVICE.md"
+                            <a href="https://ash-kernel.github.io/SpiceGames/#legal"
                                 target="_blank" rel="noreferrer" style={linkStyle}>
                                 View ↗
                             </a>
