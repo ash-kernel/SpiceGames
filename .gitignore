@@ -5,6 +5,7 @@ yarn.lock
 
 # Electron
 dist/
+dist-electron/
 out/
 release/
 
