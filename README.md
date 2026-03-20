@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="src/renderer/logo.svg" width="88" height="88" alt="SpiceGames" />
+<img src="assets/banner.png" width="88" height="88" alt="SpiceGames" />
 
 # SpiceGames
 
@@ -21,7 +21,6 @@
 | Platform | Link |
 |----------|------|
 | Windows (Installer) | 🔗 Coming Soon |
-| Windows (Portable)  | 🔗 Coming Soon |
 
 > Check [Releases](https://github.com/ash-kernel/spicegames/releases) for the latest version.
 
