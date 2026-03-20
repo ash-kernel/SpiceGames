@@ -1,0 +1,10 @@
+{
+  "ExpandedNodes": [
+    "\\src",
+    "\\src\\renderer\\components",
+    "\\src\\renderer\\pages",
+    "\\src\\renderer\\store",
+    "\\src\\renderer\\styles"
+  ],
+  "PreviewInSolutionExplorer": false
+}
