@@ -49,6 +49,7 @@ Organize, track, and launch your entire game library — all in one place.
   - Game descriptions
   - Genres & tags
 - Data from Steam, SteamSpy & OpenCritic
+- **HowLongToBeat integration** — See how long games take to complete
 
 ### 📊 Game Insights
 - **Track playtime** automatically
@@ -63,15 +64,30 @@ Organize, track, and launch your entire game library — all in one place.
 - Preview games before adding
 - Watch trailers & view screenshots
 
+### 📰 Game News & Updates
+- Real-time gaming news from top gaming outlets
+- PC Gamer, Rock Paper Shotgun, Eurogamer, IGN
+- Stay updated on new releases & deals
+
 ### 🎨 Themes & Customization
-- 4 beautiful themes:
-  - Crimson
-  - Dark
-  - Neon
-  - Ember
+- 8 beautiful themes:
+  - Crimson, Dark, Neon, Ember
+  - Rose, Ocean, Gold, Cyber
+- Toggle tabs on/off for custom layouts
+- Configure your perfect game launcher
+
+### 💰 Smart Deals
+- Browse game deals across multiple stores
+- **Multi-currency support** — View prices in your local currency
+- Filter by discount percentage and price range
+
+### 🎮 GamePad Tester
+- Built-in controller detection & testing
+- Verify your gamepad works before launching games
 
 ### ⚡ System Integration
 - Run on Windows startup *(optional)*
+- **Auto-update checker** — Stay on the latest version
 - Fully offline & local
 - No accounts or login required
 
@@ -133,10 +149,55 @@ Game metadata is fetched directly from public APIs on your machine.
 ## 🚀 Roadmap
 
 - [ ] macOS support  
-- [ ] Cloud sync (optional)  
-- [ ] Controller detection  
+- [ ] Cloud sync  
 - [ ] Advanced stats dashboard  
 - [ ] Plugin system  
+
+---
+
+## ⚠️ Windows SmartScreen Warning
+
+**Having trouble running the installer?**
+
+On first launch, Windows may show a "SmartScreen Protection" or "Smart App Control" warning. This is normal for unsigned applications.
+
+### How to Bypass SmartScreen
+
+1. **When the warning appears:**
+   - Click **"More info"** button
+   - Click **"Run anyway"** at the bottom
+   - The app will launch normally
+
+2. **Or disable Smart App Control in Windows Defender:**
+   - Open **Windows Security** (search in Start menu)
+   - Go to **App & browser control**
+   - Scroll down to **Smart App Control**
+   - Change setting to **"Off"**
+   - Restart your computer
+
+### About Code Signing
+
+The app isn't code-signed because code-signing certificates cost $50-$300+ per year. Since this is a personal project, I can't afford to pay for a certificate right now. Once you bypass the warning once, it won't bother you again!
+
+---
+
+## 🔄 Recent Updates (v4.0.0)
+
+### ✨ New Features
+- 📰 **Game News Tab** — Real-time gaming news from PC Gamer, Rock Paper Shotgun, Eurogamer & IGN
+- 🎮 **GamePad Tester** — Built-in controller detection and testing
+- 💱 **Multi-Currency Support** — View deals in your local currency
+- 🎨 **4 New Themes** — Rose, Ocean, Gold, Cyber (8 total now)
+- 📊 **Update Informer** — Auto-check for new versions
+- 🔀 **Customizable Tabs** — Toggle sections on/off for your perfect layout
+- 🕐 **HLTB Integration** — See completion times in game details
+
+### 🐛 Fixes
+- ✅ System tray icon now displays correctly
+- ✅ Improved overall UI/UX
+
+### Removed
+- 🗑️ GOG support (focusing on Steam & itch.io)
 
 ---
 

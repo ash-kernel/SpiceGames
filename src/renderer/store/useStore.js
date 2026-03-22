@@ -143,7 +143,8 @@ export const useStore = create((set, get) => ({
         delete ns[game.id]
         return { runningGames: r, sessionStarts: ns }
       })
-      throw new Error(result.error)
+      console.error('[SpiceDeck] Launch failed:', result.error)
+      throw new Error(result.error || 'Could not launch game')
     }
   },
 
@@ -154,7 +155,7 @@ export const useStore = create((set, get) => ({
   },
 
   applyTheme: (theme) => {
-    document.body.classList.remove('theme-red', 'theme-neon', 'theme-ember')
+    document.body.classList.remove('theme-red','theme-neon','theme-ember','theme-rose','theme-teal','theme-gold','theme-cyber')
     if (theme !== 'dark') document.body.classList.add(`theme-${theme}`)
     const defaults = { dark:'#6366F1', red:'#EF4444', neon:'#00FF88', ember:'#F97316' }
     const col = defaults[theme] || '#6366F1'

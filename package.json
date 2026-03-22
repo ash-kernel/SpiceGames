@@ -1,10 +1,10 @@
 {
   "name": "spicedeck",
-  "version": "3.0.0",
-  "description": "SpiceDeck — Personal Game Launcher",
+  "version": "4.0.0",
+  "description": "SpiceDeck \u2014 Personal Game Launcher",
   "main": "src/main/main.js",
   "author": "ash-kernel",
-  "license": "LICENSE.txt",
+  "license": "LICENSE",
   "scripts": {
     "dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
     "build": "vite build && electron-builder",
@@ -30,7 +30,7 @@
   "build": {
     "appId": "com.spicedeck.app",
     "productName": "SpiceDeck",
-    "copyright": "© SpiceDeck. All rights reserved.",
+    "copyright": "\u00a9 SpiceDeck. All rights reserved.",
     "directories": {
       "output": "dist-electron",
       "buildResources": "assets"
@@ -43,19 +43,34 @@
     ],
     "win": {
       "target": [
-        { "target": "nsis",     "arch": ["x64"] },
-        { "target": "portable", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "assets/icons/icon.ico",
       "requestedExecutionLevel": "asInvoker"
     },
     "mac": {
-      "target": ["dmg"],
+      "target": [
+        "dmg"
+      ],
       "icon": "assets/icons/icon.icns",
       "category": "public.app-category.entertainment"
     },
     "linux": {
-      "target": ["AppImage","deb"],
+      "target": [
+        "AppImage",
+        "deb"
+      ],
       "icon": "assets/icons/icon.png",
       "category": "Game"
     },
@@ -67,10 +82,10 @@
       "shortcutName": "SpiceDeck",
       "installerIcon": "assets/icons/icon.ico",
       "uninstallerIcon": "assets/icons/icon.ico",
-      "installerHeaderIcon": "assets/icons/icon.ico",
+      "installerHeader": "assets/installer-header.bmp",
+      "installerSidebar": "assets/installer-sidebar.bmp",
       "deleteAppDataOnUninstall": false,
-      "runAfterFinish": true,
-      "menuCategory": "SpiceDeck"
+      "runAfterFinish": true
     }
   }
 }

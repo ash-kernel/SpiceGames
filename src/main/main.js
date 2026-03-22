@@ -12,15 +12,20 @@ function getStore(k, def) { const s = readStore(); return k in s ? s[k] : def }
 function setStore(k, v) { const s = readStore(); s[k] = v; writeStore(s) }
 
 const DEFAULT_SETTINGS = {
-  theme: 'dark',
-  accentColor: '#6366F1',
-  defaultView: 'grid',
-  sortBy: 'name',
+  theme:            'dark',
+  accentColor:      '#6366F1',
+  defaultView:      'grid',
+  sortBy:           'name',
   minimizeOnLaunch: true,
-  runOnStartup: true,
-  trackPlaytime: true,
-  autoFill: true,
-  compactMode: false,
+  minimizeToTray:   false,
+  runOnStartup:     true,
+  trackPlaytime:    true,
+  autoFill:         true,
+  compactMode:      false,
+  showItch:         true,
+  showNews:         true,
+  showDeals:        true,
+  hltbEnabled:      true,
 }
 
 let mainWindow
@@ -63,45 +68,53 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow()
 
-  
-  const iconFile = process.platform === 'win32' ? 'icon.ico' : 'icon.png'
-  
-  let iconPath
-  if (app.isPackaged) {
-    // In packaged app, assets are in the asar file
-    iconPath = path.join(app.getAppPath(), 'assets', 'icons', iconFile)
-  } else {
-    // In development, look relative to main.js
-    iconPath = path.join(__dirname, '../../assets/icons', iconFile)
+  const createTray = () => {
+    const iconFile = process.platform === 'win32' ? 'icon.ico' : 'icon.png'
+    
+    let iconPath
+    if (app.isPackaged) {
+      // In packaged app, assets are in app.asar root
+      iconPath = path.join(app.getAppPath(), 'assets', 'icons', iconFile)
+    } else {
+      // In development, look relative to main.js
+      iconPath = path.join(__dirname, '../../assets/icons', iconFile)
+    }
+
+    console.log('[SpiceDeck] Tray: mode=' + (app.isPackaged ? 'packaged' : 'dev') + ', path=' + iconPath)
+
+    try {
+      if (!fs.existsSync(iconPath)) {
+        console.warn(`[SpiceDeck] Tray icon not found at: ${iconPath}`)
+        return
+      }
+
+      const img = nativeImage.createFromPath(iconPath)
+      if (img.isEmpty()) {
+        console.warn('[SpiceDeck] Tray icon loaded but is empty')
+        return
+      }
+
+      tray = new Tray(img)
+      tray.setToolTip('SpiceDeck')
+      tray.setContextMenu(Menu.buildFromTemplate([
+        { label: 'Show', click: () => { mainWindow?.show(); mainWindow?.focus() } },
+        { type: 'separator' },
+        { label: 'Quit', click: () => { app._isQuitting = true; app.quit() } },
+      ]))
+
+      tray.on('click', () => {
+        if (mainWindow?.isVisible()) mainWindow.hide()
+        else { mainWindow?.show(); mainWindow?.focus() }
+      })
+
+      console.log('[SpiceDeck] Tray icon created successfully')
+    } catch (e) {
+      console.error('[SpiceDeck] Tray creation failed:', e.message, e.stack)
+    }
   }
 
-  try {
-    console.log('[SpiceDeck] Loading tray icon from:', iconPath)
-    if (!fs.existsSync(iconPath)) {
-      console.warn(`[SpiceDeck] Icon not found at: ${iconPath}`)
-      return
-    }
-    let img = nativeImage.createFromPath(iconPath)
-    if (img.isEmpty()) {
-      console.warn('[SpiceDeck] Icon image is empty')
-      return
-    }
-    tray = new Tray(img)
-    tray.setToolTip('SpiceDeck')
-    const menu = Menu.buildFromTemplate([
-      { label:'Open SpiceDeck', click: () => { mainWindow?.show(); mainWindow?.focus() } },
-      { type:'separator' },
-      { label:'Quit',           click: () => app.quit() },
-    ])
-    tray.setContextMenu(menu)
-    tray.on('click', () => {
-      if (mainWindow?.isVisible()) { mainWindow.hide() }
-      else { mainWindow?.show(); mainWindow?.focus() }
-    })
-    tray.on('double-click', () => { mainWindow?.show(); mainWindow?.focus() })
-  } catch (e) {
-    console.warn('[SpiceDeck] Tray failed:', e.message)
-  }
+  // Create tray with a small delay to ensure resources are ready
+  setTimeout(createTray, 500)
 
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow() })
 })
@@ -200,49 +213,103 @@ ipcMain.handle('launch-game', async (event, { gameId, exePath, launchArgs, preLa
   try {
     const settings = { ...DEFAULT_SETTINGS, ...getStore('settings', {}) }
 
+    // Run pre-launch script if specified
     if (preLaunchScript && preLaunchScript.trim()) {
-      try {
-        const scriptPath = preLaunchScript.trim()
-        if (fs.existsSync(scriptPath)) {
-          await new Promise((res, rej) => {
-            const s = spawn(scriptPath, [], { detached: false, stdio: 'ignore', cwd: path.dirname(scriptPath) })
-            s.on('exit', res)
-            s.on('error', rej)
-            setTimeout(res, 5000)
-          })
-        }
-      } catch (e) {
-        console.warn('[SpiceDeck] Pre-launch script error:', e.message)
+      const scriptPath = preLaunchScript.trim()
+      if (fs.existsSync(scriptPath)) {
+        await new Promise(res => {
+          const s = spawn(scriptPath, [], { detached: true, stdio: 'ignore', cwd: path.dirname(scriptPath) })
+          s.unref()
+          s.on('exit', res)
+          s.on('error', res) // don't block on script errors
+          setTimeout(res, 5000)
+        })
       }
     }
 
     if (settings.minimizeOnLaunch) mainWindow?.minimize()
 
     const args = launchArgs ? launchArgs.trim().split(/\s+/).filter(Boolean) : []
-    const child = spawn(exePath, args, {
-      detached: true,
-      stdio: 'ignore',
-      cwd: path.dirname(exePath),
-    })
+
+    // On Windows, paths with spaces need shell:true to resolve correctly.
+    // Use execFile first (safer), fall back to spawn with shell.
+    const isWin    = process.platform === 'win32'
+    const spawnOpts = {
+      detached:    true,
+      stdio:       'ignore',
+      cwd:         path.dirname(exePath),
+      windowsHide: false,
+      ...(isWin ? { shell: false } : {}),   // shell:false is fine when we pass the full path
+    }
+
+    let child
+    try {
+      // execFile is the most reliable for direct .exe paths
+      const { execFile: execFileFn } = require('child_process')
+      child = execFileFn(exePath, args, {
+        detached:    true,
+        windowsHide: false,
+        cwd:         path.dirname(exePath),
+      })
+    } catch (_) {
+      // fallback to spawn with shell:true for paths with spaces or special chars
+      child = spawn(exePath, args, { ...spawnOpts, shell: isWin })
+    }
     child.unref()
 
     const startTime = Date.now()
     runningGames.set(gameId, { pid: child.pid, startTime })
 
-    child.on('error', err => {
-      runningGames.delete(gameId)
-      event.sender.send('game-stopped', { gameId, error: err.message })
-    })
+    // Poll every 10s to see if the process is still alive
+    // This handles launchers that spawn a child and exit themselves
+    const pollInterval = setInterval(() => {
+      try {
+        // process.kill(pid, 0) throws if process is dead — doesn't actually kill it
+        process.kill(child.pid, 0)
+      } catch {
+        // Process is gone
+        clearInterval(pollInterval)
+        const elapsed = Math.floor((Date.now() - startTime) / 60000)
+        runningGames.delete(gameId)
+        if (!event.sender.isDestroyed()) {
+          event.sender.send('game-stopped', { gameId, playtime: elapsed })
+        }
+        if (settings.minimizeOnLaunch) mainWindow?.restore()
+      }
+    }, 10_000)
+
+    // Also listen to child exit in case it's a direct process (not a launcher)
     child.on('exit', () => {
-      const elapsed = Math.floor((Date.now() - startTime) / 60000)
+      // Give it 3 seconds — if it was a launcher, the real game PID won't match
+      // So we let the poller handle cleanup instead of restoring immediately
+      setTimeout(() => {
+        if (runningGames.has(gameId)) {
+          // Still in map after 3s = poller hasn't fired = launcher already exited,
+          // real game is running under a different PID. Stop polling the dead PID.
+          clearInterval(pollInterval)
+          runningGames.delete(gameId)
+          const elapsed = Math.floor((Date.now() - startTime) / 60000)
+          if (!event.sender.isDestroyed()) {
+            event.sender.send('game-stopped', { gameId, playtime: elapsed })
+          }
+          if (settings.minimizeOnLaunch) mainWindow?.restore()
+        }
+      }, 3000)
+    })
+
+    child.on('error', err => {
+      clearInterval(pollInterval)
       runningGames.delete(gameId)
-      event.sender.send('game-stopped', { gameId, playtime: elapsed })
+      if (!event.sender.isDestroyed()) {
+        event.sender.send('game-stopped', { gameId, error: err.message })
+      }
       if (settings.minimizeOnLaunch) mainWindow?.restore()
     })
 
     return { ok: true, pid: child.pid }
   } catch (err) {
     runningGames.delete(gameId)
+    if (settings?.minimizeOnLaunch) mainWindow?.restore()
     return { ok: false, error: err.message }
   }
 })
@@ -296,7 +363,7 @@ function steamImages(appId) {
   }
 }
 
-ipcMain.handle('search-game', async (_, { name }) => {
+ipcMain.handle('search-game', async (_, { name, nsfwFilter = false }) => {
   try {
     const encoded = encodeURIComponent(name)
     const data = await nodeFetch(`https://store.steampowered.com/api/storesearch/?term=${encoded}&l=english&cc=US`)
@@ -513,13 +580,16 @@ async function parseItchGamePage(html) {
   return { title, description, cover, screenshots, price, author, tags: [...new Set(tagsArr)] }
 }
 
-ipcMain.handle('fetch-itch', async (_, { sort = 'top-rated', genre = '', page = 1 }) => {
+ipcMain.handle('fetch-itch', async (_, { sort = 'top-rated', genre = '', page = 1, nsfwFilter = false }) => {
   try {
     const sortMap = { 'top-rated':'top-rated', 'new':'newest', 'featured':'featured', 'free':'free' }
     const s = sortMap[sort] || 'top-rated'
-    let url = genre
-      ? `https://itch.io/games/${s}?format=game_grid&genre=${encodeURIComponent(genre)}&page=${page}`
-      : `https://itch.io/games/${s}?format=game_grid&platform=windows&page=${page}`
+    let url
+    if (genre) {
+      url = `https://itch.io/games/tag-${encodeURIComponent(genre)}?format=game_grid&page=${page}&sort=${s}`
+    } else {
+      url = `https://itch.io/games/${s}?format=game_grid&platform=windows&page=${page}`
+    }
     const html  = await nodeFetchText(url)
     const games = parseItchHTML(html)
     return { ok: true, games }
@@ -868,6 +938,241 @@ ipcMain.handle('get-featured-games', async () => {
   } catch (e) {
     console.error('[SpiceDeck] Featured games error:', e.message)
     return []
+  }
+})
+
+
+ipcMain.handle('fetch-news', async () => {
+  const FEEDS = [
+    { name:'PC Gamer',          url:'https://www.pcgamer.com/rss/',                      color:'#e53e3e' },
+    { name:'Rock Paper Shotgun',url:'https://www.rockpapershotgun.com/feed',             color:'#6366F1' },
+    { name:'Eurogamer',         url:'https://www.eurogamer.net/feed',                    color:'#f59e0b' },
+    { name:'IGN',               url:'https://feeds.feedburner.com/ign/news',             color:'#e53e3e' },
+  ]
+
+  const parseRSS = (xml, feed) => {
+    const items = []
+    const parts = xml.split('<item>')
+    for (let i = 1; i < parts.length; i++) {
+      const part = parts[i]
+      const get = (tag) => {
+        const m = part.match(new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]></${tag}>`))?.[1]
+                || part.match(new RegExp(`<${tag}[^>]*>([^<]*)</${tag}>`))?.[1]
+                || ''
+        return m.trim()
+      }
+      const encM = part.match(/enclosure[^>]+url="([^"]+)"/)
+      const medM = part.match(/media:thumbnail[^>]+url="([^"]+)"/)
+        || part.match(/media:content[^>]+url="([^"]+)"/)
+      const imgM  = part.match(/<img[^>]+src="([^"]+)"/)
+      const title = get('title')
+      const link  = get('link') || part.match(/<link>([^<]+)<\/link>/)?.[1]?.trim() || ''
+      const date  = get('pubDate')
+      const desc  = get('description').replace(/<[^>]+>/g,' ').trim().slice(0,180)
+      const image = encM?.[1] || medM?.[1] || imgM?.[1] || null
+      if (title && link) items.push({ title, link, date, description:desc, image, source:feed.name, sourceColor:feed.color, id:link })
+    }
+    return items
+  }
+
+  const results = await Promise.allSettled(
+    FEEDS.map(async feed => {
+      try {
+        const xml = await nodeFetchText(feed.url)
+        return parseRSS(xml, feed)
+      } catch { return [] }
+    })
+  )
+
+  const all = results
+    .filter(r => r.status === 'fulfilled')
+    .flatMap(r => r.value)
+    .sort((a,b) => new Date(b.date||0) - new Date(a.date||0))
+
+  return { ok: true, items: all }
+})
+
+ipcMain.handle('open-external', (_, url) => { shell.openExternal(url); return { ok:true } })
+
+
+// ── Discover: Steam + SteamSpy (100% public, zero keys) ─────────────────────
+ipcMain.handle('discover-games', async (_, { mode = 'trending', genre = '', search = '', page = 1 }) => {
+  try {
+    // SteamSpy endpoints (free, no key, ~40k games tracked)
+    const GENRE_MAP = {
+      action:'Action', rpg:'RPG', strategy:'Strategy', simulation:'Simulation',
+      adventure:'Adventure', indie:'Indie', sports:'Sports', racing:'Racing',
+      puzzle:'Puzzle', horror:'Horror', shooter:'Shooter', casual:'Casual',
+    }
+
+    let appids = []
+
+    if (search.trim()) {
+      // Use Steam store search
+      const encoded = encodeURIComponent(search.trim())
+      const res = await nodeFetch(`https://store.steampowered.com/api/storesearch/?term=${encoded}&l=english&cc=US`)
+      const items = res?.items || []
+      appids = items.slice(0, 24).map(i => ({ appid: i.id, name: i.name, price: i.final_price === 0 ? 'Free' : i.final_formatted || '' }))
+    } else if (genre && GENRE_MAP[genre]) {
+      // SteamSpy genre endpoint
+      const data = await nodeFetch(`https://steamspy.com/api.php?request=genre&genre=${encodeURIComponent(GENRE_MAP[genre])}`)
+      const all  = Object.values(data || {})
+      // Sort by owners (trending) or score
+      all.sort((a, b) => {
+        const ao = parseInt((a.owners || '0').replace(/[^0-9]/g,'')) || 0
+        const bo = parseInt((b.owners || '0').replace(/[^0-9]/g,'')) || 0
+        return bo - ao
+      })
+      appids = all.slice((page-1)*24, page*24).map(g => ({ appid: g.appid, name: g.name, owners: g.owners, score: g.score_rank }))
+    } else {
+      // Top lists from SteamSpy
+      const endpoint = mode === 'toprated'   ? 'top100forever'
+                     : mode === 'new'        ? 'top100in2weeks'
+                     : mode === 'free'       ? 'price&price=0'
+                     :                         'top100in2weeks'
+      const data = await nodeFetch(`https://steamspy.com/api.php?request=${endpoint}`)
+      const all  = Object.values(data || {})
+      appids = all.slice((page-1)*24, page*24).map(g => ({ appid: g.appid, name: g.name, owners: g.owners, score: g.score_rank, positive: g.positive, negative: g.negative, price: g.price === '0' ? 'Free' : g.price ? `$${(parseInt(g.price)/100).toFixed(2)}` : '' }))
+    }
+
+    // Build game objects with Steam CDN images (no API call needed for images)
+    const games = appids.map(g => {
+      const id = String(g.appid)
+      // 4-level image fallback baked in
+      return {
+        steamId:    id,
+        name:       g.name || '',
+        cover:      `https://cdn.akamai.steamstatic.com/steam/apps/${id}/library_600x900.jpg`,
+        header:     `https://cdn.akamai.steamstatic.com/steam/apps/${id}/header.jpg`,
+        capsule:    `https://cdn.akamai.steamstatic.com/steam/apps/${id}/capsule_616x353.jpg`,
+        hero:       `https://cdn.akamai.steamstatic.com/steam/apps/${id}/library_hero.jpg`,
+        price:      g.price || '',
+        owners:     g.owners || '',
+        score:      g.score  || null,
+        positive:   g.positive || 0,
+        negative:   g.negative || 0,
+        storeUrl:   `https://store.steampowered.com/app/${id}`,
+      }
+    })
+
+    return { ok: true, games, hasMore: appids.length >= 24 }
+  } catch (e) {
+    console.error('[SpiceDeck] Discover error:', e.message)
+    return { ok: false, games: [], hasMore: false }
+  }
+})
+
+ipcMain.handle('discover-details', async (_, { steamId }) => {
+  try {
+    const [details, spy, reviews] = await Promise.all([
+      nodeFetch(`https://store.steampowered.com/api/appdetails?appids=${steamId}&l=english`),
+      nodeFetch(`https://steamspy.com/api.php?request=appdetails&appid=${steamId}`),
+      nodeFetch(`https://store.steampowered.com/appreviews/${steamId}?json=1&language=english&num_per_page=0`),
+    ])
+
+    const d = details?.[steamId]?.data
+    if (!d) return { ok: false }
+
+    const score = reviews?.query_summary
+    const totalVotes = (score?.total_positive || 0) + (score?.total_negative || 0)
+    const rating = totalVotes > 0 ? Math.round((score.total_positive / totalVotes) * 100) : null
+
+    return {
+      ok:          true,
+      steamId,
+      name:        d.name,
+      description: d.short_description || '',
+      longDesc:    d.detailed_description || '',
+      cover:       `https://cdn.akamai.steamstatic.com/steam/apps/${steamId}/library_600x900.jpg`,
+      header:      d.header_image || `https://cdn.akamai.steamstatic.com/steam/apps/${steamId}/header.jpg`,
+      hero:        `https://cdn.akamai.steamstatic.com/steam/apps/${steamId}/library_hero.jpg`,
+      screenshots: (d.screenshots || []).slice(0, 10).map(s => s.path_full),
+      genres:      (d.genres || []).map(g => g.description),
+      categories:  (d.categories || []).slice(0, 6).map(c => c.description),
+      developers:  d.developers || [],
+      publishers:  d.publishers || [],
+      releaseDate: d.release_date?.date || '',
+      metacritic:  d.metacritic?.score || null,
+      website:     d.website || null,
+      price:       d.is_free ? 'Free' : d.price_overview?.final_formatted || '',
+      platforms:   Object.keys(d.platforms || {}).filter(k => d.platforms[k]),
+      rating,
+      totalVotes,
+      owners:      spy?.owners || '',
+      avgPlaytime: spy?.average_forever ? Math.round(spy.average_forever / 60) : null,
+      peakCCU:     spy?.ccu || null,
+    }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+})
+
+// ── HowLongToBeat ─────────────────────────────────────────────────────────────
+ipcMain.handle('hltb-search', async (_, { name }) => {
+  try {
+    const payload = JSON.stringify({
+      searchType:    'games',
+      searchTerms:   name.split(' ').filter(Boolean),
+      searchPage:    1,
+      size:          5,
+      searchOptions: { games: { userId: 0, platform: '', sortCategory: 'popular', rangeCategory: 'main', rangeTime: { min: 0, max: 0 }, gameplay: { perspective: '', flow: '', genre: '' }, modifier: '' }, users: { sortCategory: 'postcount' }, filter: '', sort: 0, randomizer: 0 },
+    })
+
+    const res = await nodeFetch('https://howlongtobeat.com/api/search', {
+      method:  'POST',
+      body:    payload,
+      headers: {
+        'Content-Type': 'application/json',
+        'Referer':      'https://howlongtobeat.com',
+        'Origin':       'https://howlongtobeat.com',
+        'User-Agent':   'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+      },
+    })
+
+    if (!res?.data?.length) return { ok: true, results: [] }
+
+    const results = res.data.slice(0, 3).map(g => ({
+      id:           g.game_id,
+      name:         g.game_name,
+      cover:        g.game_image
+                      ? `https://howlongtobeat.com/games/${g.game_image}`
+                      : null,
+      mainStory:    g.comp_main   ? Math.round(g.comp_main   / 3600) : null,
+      mainExtra:    g.comp_plus   ? Math.round(g.comp_plus   / 3600) : null,
+      completionist:g.comp_100    ? Math.round(g.comp_100    / 3600) : null,
+    }))
+
+    return { ok: true, results }
+  } catch {
+    // HLTB is non-critical, fail silently
+    return { ok: true, results: [] }
+  }
+})
+
+// ── Auto-update checker ───────────────────────────────────────────────────────
+ipcMain.handle('check-update', async () => {
+  try {
+    const current = app.getVersion()
+    const release = await nodeFetch(
+      'https://api.github.com/repos/ash-kernel/spicedeck/releases/latest',
+      { headers: { 'User-Agent': 'SpiceDeck' } }
+    )
+
+    if (!release?.tag_name) return { ok: false }
+
+    const latest    = release.tag_name.replace(/^v/, '')
+    const hasUpdate = latest !== current
+
+    return {
+      ok:        true,
+      current,
+      latest,
+      hasUpdate,
+      url:       release.html_url || '',
+      notes:     release.body     || '',
+    }
+  } catch {
+    return { ok: false }
   }
 })
 

@@ -156,3 +156,75 @@ img { display: block; }
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
+
+/* ══ ROSE PINK ══════════════════════════════════════════════════════════════ */
+body.theme-rose {
+  --accent:        #F43F5E;
+  --accent-rgb:    244,63,94;
+  --accent2:       #EC4899;
+  --bg:            #0F0810;
+  --bg2:           #160B14;
+  --bg3:           #1D1020;
+  --bg4:           #24142A;
+  --bg5:           #2C1A34;
+  --border:        rgba(244,63,94,0.07);
+  --border2:       rgba(244,63,94,0.13);
+  --text:          #FFF0F5;
+  --text2:         #9A7090;
+  --text3:         #5C3A55;
+  --shadow-glow:   0 0 40px rgba(244,63,94,0.25);
+}
+
+/* ══ OCEAN TEAL ═════════════════════════════════════════════════════════════ */
+body.theme-teal {
+  --accent:        #14B8A6;
+  --accent-rgb:    20,184,166;
+  --accent2:       #0EA5E9;
+  --bg:            #060C0C;
+  --bg2:           #0A1414;
+  --bg3:           #0E1C1C;
+  --bg4:           #132424;
+  --bg5:           #182E2E;
+  --border:        rgba(20,184,166,0.07);
+  --border2:       rgba(20,184,166,0.13);
+  --text:          #E8FFFD;
+  --text2:         #6A9090;
+  --text3:         #3A5858;
+  --shadow-glow:   0 0 40px rgba(20,184,166,0.22);
+}
+
+/* ══ AMBER GOLD ═════════════════════════════════════════════════════════════ */
+body.theme-gold {
+  --accent:        #F59E0B;
+  --accent-rgb:    245,158,11;
+  --accent2:       #EAB308;
+  --bg:            #0C0A04;
+  --bg2:           #141006;
+  --bg3:           #1C1808;
+  --bg4:           #24200A;
+  --bg5:           #2C280E;
+  --border:        rgba(245,158,11,0.07);
+  --border2:       rgba(245,158,11,0.13);
+  --text:          #FFFAEB;
+  --text2:         #8A7A40;
+  --text3:         #5C4E18;
+  --shadow-glow:   0 0 40px rgba(245,158,11,0.22);
+}
+
+/* ══ CYBERPUNK ══════════════════════════════════════════════════════════════ */
+body.theme-cyber {
+  --accent:        #A855F7;
+  --accent-rgb:    168,85,247;
+  --accent2:       #EC4899;
+  --bg:            #08040F;
+  --bg2:           #0E0818;
+  --bg3:           #140C22;
+  --bg4:           #1A102C;
+  --bg5:           #221636;
+  --border:        rgba(168,85,247,0.07);
+  --border2:       rgba(168,85,247,0.13);
+  --text:          #F8F0FF;
+  --text2:         #8A70A0;
+  --text3:         #5A4070;
+  --shadow-glow:   0 0 40px rgba(168,85,247,0.28);
+}

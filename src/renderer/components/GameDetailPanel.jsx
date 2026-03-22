@@ -41,6 +41,15 @@ export default function GameDetailPanel() {
   const collections        = useStore(s => s.collections)
   const addCollection      = useStore(s => s.addCollection)
   const toggleGameCollection = useStore(s => s.toggleGameCollection)
+
+  useEffect(() => {
+    const settings = window.__settingsCache || {}
+    if (!IS || settings.hltbEnabled === false || !game.name) return
+    window.spicegames.hltbSearch({ name: game.name })
+      .then(res => { if (res.ok && res.results[0]) setHltb(res.results[0]) })
+      .catch(() => {})
+  }, [game.id])
+
   const setGameGoal          = useStore(s => s.setGameGoal)
   const settings             = useStore(s => s.settings)
 
@@ -56,6 +65,8 @@ export default function GameDetailPanel() {
   const [goalInput,   setGoalInput]  = useState(game.goalMinutes ? String(Math.round(game.goalMinutes/60)) : '')
   const [achLoading,  setAchLoading] = useState(false)
   const [achievements,setAchs]       = useState(null)
+  const [hltbData,    setHltb]       = useState(null)
+  const [igdbData,    setIgdb]       = useState(null)
 
   const isRunning = runningGames.has(game?.id)
 
@@ -357,6 +368,21 @@ export default function GameDetailPanel() {
 
         {tab === 'goals' && (
           <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            {hltbData && (
+              <div style={{ padding:'12px 14px', borderRadius:10, background:'rgba(245,196,24,.06)', border:'1px solid rgba(245,196,24,.2)', marginBottom:14 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:'#f5c518', marginBottom:8, display:'flex', alignItems:'center', gap:6 }}>
+                  ⏱ HowLongToBeat — {hltbData.name}
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+                  {[['Main Story',hltbData.mainStory],['Main + Extra',hltbData.mainExtra],['Completionist',hltbData.completionist]].filter(([,v])=>v).map(([label,hours])=>(
+                    <div key={label} style={{ textAlign:'center', padding:'8px 6px', borderRadius:8, background:'var(--bg4)' }}>
+                      <div style={{ fontSize:16, fontWeight:800, color:'var(--text)', fontFamily:'var(--font-display)' }}>{hours}h</div>
+                      <div style={{ fontSize:10, color:'var(--text3)', marginTop:2 }}>{label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div>
               <div style={{ fontSize:12, fontWeight:600, color:'var(--text2)', marginBottom:6 }}>Playtime Goal</div>
               <div style={{ fontSize:11, color:'var(--text3)', marginBottom:10, lineHeight:1.6 }}>Set a target playtime in hours. Progress shows on the library card.</div>

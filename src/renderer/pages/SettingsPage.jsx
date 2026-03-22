@@ -6,42 +6,25 @@ import toast from 'react-hot-toast'
 const IS = typeof window !== 'undefined' && window.spicegames != null
 
 const THEMES = [
-  { id:'dark',  label:'Dark',    accent:'#6366F1', desc:'Indigo'  },
-  { id:'red',   label:'Crimson', accent:'#EF4444', desc:'Red'     },
-  { id:'neon',  label:'Neon',    accent:'#00FF88', desc:'Green'   },
-  { id:'ember', label:'Ember',   accent:'#F97316', desc:'Orange'  },
+  { id:'dark',  label:'Indigo', accent:'#6366F1', accent2:'#8B5CF6', desc:'Default' },
+  { id:'red',   label:'Crimson',accent:'#EF4444', accent2:'#DC2626', desc:'Red'     },
+  { id:'neon',  label:'Matrix', accent:'#00FF88', accent2:'#00E5FF', desc:'Green'   },
+  { id:'ember', label:'Ember',  accent:'#F97316', accent2:'#EF4444', desc:'Orange'  },
+  { id:'rose',  label:'Rose',   accent:'#F43F5E', accent2:'#EC4899', desc:'Pink'    },
+  { id:'teal',  label:'Ocean',  accent:'#14B8A6', accent2:'#0EA5E9', desc:'Teal'    },
+  { id:'gold',  label:'Gold',   accent:'#F59E0B', accent2:'#EAB308', desc:'Amber'   },
+  { id:'cyber', label:'Cyber',  accent:'#A855F7', accent2:'#EC4899', desc:'Purple'  },
 ]
 
-const SORT_OPTS = [
-  { v:'name',       l:'Name A–Z'       },
-  { v:'lastPlayed', l:'Recently Played' },
-  { v:'playtime',   l:'Most Played'    },
-  { v:'rating',     l:'Top Rated'      },
-  { v:'added',      l:'Recently Added' },
+const APIS = [
+  { name:'Steam Store',    color:'#1a9fff', badge:'NO KEY', desc:'Game search, prices, reviews, screenshots, descriptions and Metacritic scores.' },
+  { name:'SteamSpy',       color:'#c6d4df', badge:'NO KEY', desc:'Discover trending and top-rated games, genre browsing, owner estimates.' },
+  { name:'Steam CDN',      color:'#66c0f4', badge:'FREE',   desc:'Portrait covers, headers, hero images — 4-level fallback chain per game.' },
+  { name:'CheapShark',     color:'#10B981', badge:'NO KEY', desc:'Live deals across Steam, GOG, Epic Games, Humble Bundle and more.' },
+  { name:'itch.io',        color:'#FA6432', badge:'FREE',   desc:'Indie game browser with tag filtering, search and detail pages.' },
+  { name:'PC Gamer / RPS', color:'#e53e3e', badge:'FREE',   desc:'Game news RSS feeds from PC Gamer, Rock Paper Shotgun, Eurogamer, IGN.' },
+  { name:'HowLongToBeat',  color:'#f5c518', badge:'FREE',   desc:'Completion times — Main Story, Main+Extra, 100%. Shows on game panels.' },
 ]
-
-function Card({ title, children }) {
-  return (
-    <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:14, overflow:'hidden', marginBottom:14 }}>
-      <div style={{ padding:'10px 18px', borderBottom:'1px solid var(--border)', fontSize:10, fontWeight:700, color:'var(--accent)', textTransform:'uppercase', letterSpacing:'1.2px' }}>
-        {title}
-      </div>
-      {children}
-    </div>
-  )
-}
-
-function Row({ label, desc, children, last }) {
-  return (
-    <div style={{ display:'flex', alignItems:'center', gap:16, padding:'12px 18px', borderBottom:last?'none':'1px solid var(--border)', minHeight:50 }}>
-      <div style={{ flex:1, minWidth:0 }}>
-        <div style={{ fontSize:13, color:'var(--text)', fontWeight:500 }}>{label}</div>
-        {desc && <div style={{ fontSize:11, color:'var(--text3)', marginTop:2, lineHeight:1.5 }}>{desc}</div>}
-      </div>
-      <div style={{ flexShrink:0 }}>{children}</div>
-    </div>
-  )
-}
 
 function Toggle({ value, onChange, disabled }) {
   return (
@@ -61,6 +44,37 @@ function Sel({ value, onChange, options }) {
   )
 }
 
+function Row({ label, desc, children, last }) {
+  return (
+    <div style={{ display:'flex', alignItems:'center', gap:14, padding:'12px 16px', borderBottom:last?'none':'1px solid var(--border)', minHeight:50 }}>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ fontSize:13, color:'var(--text)', fontWeight:500 }}>{label}</div>
+        {desc && <div style={{ fontSize:11, color:'var(--text3)', marginTop:2, lineHeight:1.5 }}>{desc}</div>}
+      </div>
+      <div style={{ flexShrink:0 }}>{children}</div>
+    </div>
+  )
+}
+
+function Card({ title, children, noPad }) {
+  return (
+    <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:14, overflow:'hidden', marginBottom:0 }}>
+      <div style={{ padding:'9px 16px', borderBottom:'1px solid var(--border)', fontSize:10, fontWeight:700, color:'var(--accent)', textTransform:'uppercase', letterSpacing:'1.2px' }}>
+        {title}
+      </div>
+      {noPad ? children : <div>{children}</div>}
+    </div>
+  )
+}
+
+function Input({ value, onChange, placeholder, type='text', monospace }) {
+  return (
+    <input value={value} onChange={e => onChange(e.target.value)}
+      placeholder={placeholder} type={type}
+      style={{ background:'var(--bg3)', border:'1px solid var(--border2)', color:'var(--text)', fontFamily:monospace?'monospace':'var(--font-body)', padding:'6px 10px', borderRadius:8, fontSize:12, outline:'none', width:200 }} />
+  )
+}
+
 export default function SettingsPage() {
   const settings     = useStore(s => s.settings)
   const saveSettings = useStore(s => s.saveSettings)
@@ -71,18 +85,25 @@ export default function SettingsPage() {
   const [version,        setVersion]       = useState('1.0.0')
   const [startupStatus,  setStartupStatus] = useState({ enabled:false, supported:false })
   const [startupLoading, setStartupLoading]= useState(false)
+  const [updateChecking, setUpdateChecking]= useState(false)
 
   useEffect(() => {
     if (settings) setLocal(settings)
     if (IS) {
-      window.spicegames.getAppVersion().then(v => setVersion(v)).catch(()=>{})
-      window.spicegames.getStartupStatus().then(s => setStartupStatus(s)).catch(()=>{})
+      window.spicegames.getAppVersion().then(v => setVersion(v)).catch(() => {})
+      window.spicegames.getStartupStatus().then(s => setStartupStatus(s)).catch(() => {})
     }
   }, [settings])
 
-  const set = (k, v) => { setLocal(p => ({...p,[k]:v})); saveSettings({[k]:v}) }
+  const set = (k, v) => {
+    setLocal(p => ({ ...p, [k]: v }))
+    saveSettings({ [k]: v })
+  }
 
-  const handleTheme = id => { applyTheme(id); setLocal(p => ({...p, theme:id})) }
+  const handleTheme = id => {
+    applyTheme(id)
+    setLocal(p => ({ ...p, theme: id }))
+  }
 
   const handleStartup = async enable => {
     if (!IS) return
@@ -90,9 +111,11 @@ export default function SettingsPage() {
     try {
       await window.spicegames.setRunOnStartup(enable)
       set('runOnStartup', enable)
-      setStartupStatus(s => ({...s, enabled:enable}))
-      toast.success(enable ? 'SpiceDeck will launch on startup' : 'Removed from startup')
-    } catch { toast.error('Failed to update startup setting') }
+      setStartupStatus(s => ({ ...s, enabled: enable }))
+      toast.success(enable ? 'Launches on startup' : 'Removed from startup')
+    } catch {
+      toast.error('Failed to update startup')
+    }
     setStartupLoading(false)
   }
 
@@ -104,143 +127,182 @@ export default function SettingsPage() {
     toast.success('Library exported!')
   }
 
-  return (
-    <div style={{ height:'100%', overflowY:'auto', padding:'20px 22px 80px' }}>
-      <div style={{ maxWidth:620, margin:'0 auto' }}>
+  const checkForUpdates = async () => {
+    setUpdateChecking(true)
+    try {
+      const res = await window.spicegames.checkUpdate()
+      if (res?.hasUpdate) {
+        toast(`🎉 Update available: v${res.latest}`, { duration: 5000 })
+      } else if (res?.ok) {
+        toast.success(`You're on the latest version (v${res.current})`)
+      } else {
+        toast('Could not check for updates', { icon: '⚠️' })
+      }
+    } catch {
+      toast.error('Update check failed')
+    }
+    setUpdateChecking(false)
+  }
 
-        <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:24 }}>
-          <img src={logoSvg} alt="" style={{ width:40, height:40, borderRadius:11, boxShadow:'0 4px 14px rgba(99,102,241,.3)' }} />
-          <div>
-            <div style={{ fontFamily:'var(--font-display)', fontSize:19, fontWeight:900, color:'var(--text)', lineHeight:1 }}>Settings</div>
-            <div style={{ fontSize:11, color:'var(--text3)', marginTop:3 }}>SpiceDeck v{version}</div>
-          </div>
+  const activeTheme = local.theme || 'dark'
+  const currentTheme = THEMES.find(t => t.id === activeTheme) || THEMES[0]
+
+  return (
+    <div style={{ height:'100%', overflowY:'auto', padding:'16px 20px 60px' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:18 }}>
+        <img src={logoSvg} alt="" style={{ width:34, height:34, borderRadius:8 }} />
+        <div>
+          <div style={{ fontFamily:'var(--font-display)', fontSize:17, fontWeight:900, color:'var(--text)' }}>Settings</div>
+          <div style={{ fontSize:11, color:'var(--text3)' }}>SpiceDeck v{version}</div>
+        </div>
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, alignItems:'start' }}>
+
+        {/* ── LEFT COLUMN ──────────────────────────────────── */}
+        <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+
+          <Card title="Theme">
+            <div style={{ padding:'12px 14px' }}>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:6, marginBottom:10 }}>
+                {THEMES.map(t => {
+                  const active = activeTheme === t.id
+                  return (
+                    <button key={t.id} onClick={() => handleTheme(t.id)}
+                      style={{ padding:'9px 4px', borderRadius:9, border:`2px solid ${active?t.accent:'var(--border2)'}`, background:active?`${t.accent}18`:'var(--bg3)', cursor:'pointer', textAlign:'center', transition:'all .18s' }}>
+                      <div style={{ width:9, height:9, borderRadius:'50%', background:t.accent, boxShadow:`0 0 6px ${t.accent}`, margin:'0 auto 5px' }} />
+                      <div style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:10, color:active?t.accent:'var(--text)' }}>{t.label}</div>
+                    </button>
+                  )
+                })}
+              </div>
+              <div style={{ padding:'8px 10px', borderRadius:8, background:`${currentTheme.accent}12`, border:`1px solid ${currentTheme.accent}28`, display:'flex', alignItems:'center', gap:8 }}>
+                <div style={{ width:7, height:7, borderRadius:'50%', background:currentTheme.accent, boxShadow:`0 0 5px ${currentTheme.accent}` }} />
+                <span style={{ fontSize:12, color:'var(--text)', fontWeight:600 }}>{currentTheme.label}</span>
+                <span style={{ fontSize:11, color:'var(--text3)' }}>{currentTheme.desc}</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card title="Display">
+            <Row label="Default library view">
+              <Sel value={local.defaultView||'grid'} onChange={v=>set('defaultView',v)}
+                options={[{v:'grid',l:'Grid'},{v:'list',l:'List'}]} />
+            </Row>
+            <Row label="Default sort" last>
+              <Sel value={local.sortBy||'name'} onChange={v=>set('sortBy',v)}
+                options={[{v:'name',l:'Name A–Z'},{v:'rating',l:'Top Rated'},{v:'playtime',l:'Most Played'},{v:'lastPlayed',l:'Recent'},{v:'added',l:'Added'}]} />
+            </Row>
+          </Card>
+
+          <Card title="Tabs" noPad>
+            <div style={{ padding:'10px 14px 6px', fontSize:12, color:'var(--text3)' }}>
+              Hide tabs you don't use — they'll be removed from the sidebar.
+            </div>
+            <Row label="itch.io" desc="Indie games browser">
+              <Toggle value={local.showItch!==false} onChange={v=>set('showItch',v)} />
+            </Row>
+            <Row label="Game News" desc="PC Gamer, RPS, Eurogamer, IGN">
+              <Toggle value={local.showNews!==false} onChange={v=>set('showNews',v)} />
+            </Row>
+            <Row label="Deals" desc="CheapShark game deals aggregator" last>
+              <Toggle value={local.showDeals!==false} onChange={v=>set('showDeals',v)} />
+            </Row>
+          </Card>
+
+          <Card title="Data Sources" noPad>
+            {APIS.map((api, i) => (
+              <div key={api.name} style={{ padding:'10px 16px', borderBottom:i<APIS.length-1?'1px solid var(--border)':'none' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3 }}>
+                  <div style={{ width:6, height:6, borderRadius:'50%', background:api.color, boxShadow:`0 0 4px ${api.color}`, flexShrink:0 }} />
+                  <span style={{ fontSize:12, fontWeight:600, color:'var(--text)', flex:1 }}>{api.name}</span>
+                  <span style={{ fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:20, background:`${api.color}18`, color:api.color, border:`1px solid ${api.color}28` }}>{api.badge}</span>
+                  <span style={{ fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:20, background:'rgba(16,185,129,.1)', color:'var(--success)', border:'1px solid rgba(16,185,129,.2)' }}>FREE</span>
+                </div>
+                <div style={{ fontSize:11, color:'var(--text3)', paddingLeft:14, lineHeight:1.5 }}>{api.desc}</div>
+              </div>
+            ))}
+          </Card>
+
         </div>
 
-        {}
-        <Card title="Appearance">
-          <div style={{ padding:'14px 18px', borderBottom:'1px solid var(--border)' }}>
-            <div style={{ fontSize:11, color:'var(--text3)', fontWeight:600, marginBottom:10, textTransform:'uppercase', letterSpacing:'.5px' }}>Theme</div>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
-              {THEMES.map(t => {
-                const active = (local.theme || 'dark') === t.id
-                return (
-                  <button key={t.id} onClick={() => handleTheme(t.id)}
-                    style={{ padding:'12px 6px', borderRadius:10, border:`2px solid ${active ? t.accent : 'var(--border2)'}`, background:active ? `${t.accent}14` : 'var(--bg3)', cursor:'pointer', transition:'all .18s', textAlign:'center' }}>
-                    <div style={{ width:10, height:10, borderRadius:'50%', background:t.accent, boxShadow:`0 0 8px ${t.accent}`, margin:'0 auto 8px' }} />
-                    <div style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:11, color:active ? t.accent : 'var(--text)', marginBottom:2 }}>{t.label}</div>
-                    <div style={{ fontSize:9, color:'var(--text3)' }}>{t.desc}</div>
-                    {active && <div style={{ fontSize:11, color:t.accent, marginTop:3 }}>✓</div>}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-          <Row label="Default library view">
-            <Sel value={local.defaultView || 'grid'} onChange={v => set('defaultView', v)}
-              options={[{v:'grid',l:'Grid'},{v:'list',l:'List'}]} />
-          </Row>
-          <Row label="Default sort order" last>
-            <Sel value={local.sortBy || 'name'} onChange={v => set('sortBy', v)} options={SORT_OPTS} />
-          </Row>
-        </Card>
+        {/* ── RIGHT COLUMN ─────────────────────────────────── */}
+        <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
-        {}
-        <Card title="System">
-          <Row label="Run on startup"
-            desc={!IS ? 'Desktop app only' : !startupStatus.supported ? 'Available after installing the built .exe' : 'Launch SpiceDeck when Windows starts'}>
-            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              {startupLoading && <div style={{ width:13, height:13, border:'2px solid var(--accent)', borderTopColor:'transparent', borderRadius:'50%', animation:'spin .7s linear infinite' }} />}
-              <Toggle
-                value={startupStatus.enabled || local.runOnStartup === true}
-                onChange={handleStartup}
-                disabled={!IS || !startupStatus.supported || startupLoading}
-              />
-            </div>
-          </Row>
-          <Row label="Minimize to tray" desc="Closing the window keeps SpiceDeck running in the system tray">
-            <Toggle value={local.minimizeToTray === true} onChange={v => set('minimizeToTray', v)} />
-          </Row>
-          <Row label="Minimize on game launch" desc="Hide window when a game starts">
-            <Toggle value={local.minimizeOnLaunch !== false} onChange={v => set('minimizeOnLaunch', v)} />
-          </Row>
-          <Row label="Track playtime" desc="Record how long each session lasts" last>
-            <Toggle value={local.trackPlaytime !== false} onChange={v => set('trackPlaytime', v)} />
-          </Row>
-        </Card>
-
-        {}
-        <Card title="Library & Metadata">
-          <Row label="Auto-fill metadata" desc="Search Steam automatically when you browse for a game .exe">
-            <Toggle value={local.autoFill !== false} onChange={v => set('autoFill', v)} />
-          </Row>
-          <Row label="Games in library">
-            <span style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:18, color:'var(--accent)' }}>{games.length}</span>
-          </Row>
-          <Row label="Export library" desc="Download your library as a JSON backup" last>
-            <button onClick={handleExport}
-              style={{ padding:'7px 16px', borderRadius:8, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)', fontSize:12, cursor:'pointer', transition:'background .15s', fontFamily:'var(--font-body)' }}
-              onMouseEnter={e => e.currentTarget.style.background = 'var(--bg4)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'var(--bg3)'}>
-              📤 Export JSON
-            </button>
-          </Row>
-        </Card>
-
-        {}
-        <Card title="Data Sources">
-          {[
-            { name:'Steam Store',   dot:'#1a9fff', info:'Search · Descriptions · Pricing · Genres · Screenshots' },
-            { name:'SteamSpy',      dot:'#c6d4df', info:'Owner estimates · Avg playtime · Community tags' },
-            { name:'OpenCritic',    dot:'#F28C28', info:'Critic review scores from 300+ outlets' },
-            { name:'Steam CDN',     dot:'#66c0f4', info:'Cover art · Headers · Hero banners' },
-            { name:'CheapShark',    dot:'#10B981', info:'Game deals — Steam, GOG, Epic, Humble' },
-            { name:'itch.io',       dot:'#FA6432', info:'Independent games browse & search' },
-          ].map((api, i, arr) => (
-            <div key={api.name} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 18px', borderBottom:i < arr.length-1 ? '1px solid var(--border)' : 'none' }}>
-              <div style={{ width:8, height:8, borderRadius:'50%', background:api.dot, flexShrink:0, boxShadow:`0 0 5px ${api.dot}` }} />
-              <div style={{ flex:1, minWidth:0 }}>
-                <span style={{ fontSize:13, fontWeight:600, color:'var(--text)', marginRight:8 }}>{api.name}</span>
-                <span style={{ fontSize:11, color:'var(--text3)' }}>{api.info}</span>
+          <Card title="System">
+            <Row label="Run on startup" desc={!startupStatus.supported?'Available in installed build':undefined}>
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                {startupLoading && <div style={{ width:12, height:12, border:'2px solid var(--accent)', borderTopColor:'transparent', borderRadius:'50%', animation:'spin .7s linear infinite' }} />}
+                <Toggle value={startupStatus.enabled||local.runOnStartup===true} onChange={handleStartup} disabled={!IS||!startupStatus.supported||startupLoading} />
               </div>
-              <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:20, background:'rgba(16,185,129,.1)', color:'var(--success)', border:'1px solid rgba(16,185,129,.2)', flexShrink:0 }}>FREE</span>
-            </div>
-          ))}
-        </Card>
+            </Row>
+            <Row label="Minimize to tray" desc="Close button hides to system tray">
+              <Toggle value={local.minimizeToTray===true} onChange={v=>set('minimizeToTray',v)} />
+            </Row>
+            <Row label="Minimize on game launch">
+              <Toggle value={local.minimizeOnLaunch!==false} onChange={v=>set('minimizeOnLaunch',v)} />
+            </Row>
+            <Row label="Track playtime" last>
+              <Toggle value={local.trackPlaytime!==false} onChange={v=>set('trackPlaytime',v)} />
+            </Row>
+          </Card>
 
-        {}
-        <Card title="Legal & About">
-          <Row label="Privacy Policy">
-            <a href="https://ash-kernel.github.io/spicegames/#legal" target="_blank" rel="noreferrer"
-              style={{ fontSize:12, color:'var(--accent)', textDecoration:'none', padding:'6px 12px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', display:'inline-block', transition:'background .15s' }}
-              onMouseEnter={e => e.currentTarget.style.background = 'var(--bg4)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'var(--bg3)'}>
-              View ↗
-            </a>
-          </Row>
-          <Row label="Terms of Service">
-            <a href="https://ash-kernel.github.io/spicegames/#legal" target="_blank" rel="noreferrer"
-              style={{ fontSize:12, color:'var(--accent)', textDecoration:'none', padding:'6px 12px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', display:'inline-block', transition:'background .15s' }}
-              onMouseEnter={e => e.currentTarget.style.background = 'var(--bg4)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'var(--bg3)'}>
-              View ↗
-            </a>
-          </Row>
-          <div style={{ padding:'14px 18px', borderTop:'1px solid var(--border)', display:'flex', alignItems:'center', gap:14 }}>
-            <img src={logoSvg} alt="" style={{ width:40, height:40, borderRadius:10, flexShrink:0 }} />
-            <div style={{ flex:1 }}>
-              <div style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:14, color:'var(--text)' }}>SpiceDeck</div>
-              <div style={{ fontSize:11, color:'var(--text3)', marginTop:2 }}>v{version} · Electron 28 · React 18</div>
-            </div>
-            <a href="https://github.com/ash-kernel" target="_blank" rel="noreferrer"
-              style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 12px', borderRadius:8, border:'1px solid var(--border2)', background:'var(--bg3)', textDecoration:'none', transition:'background .15s', flexShrink:0 }}
-              onMouseEnter={e => e.currentTarget.style.background = 'var(--bg4)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'var(--bg3)'}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="var(--text)"><path fillRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.164 6.839 9.49.5.09.682-.218.682-.484 0-.236-.009-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.268 2.75 1.026A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.337 1.909-1.294 2.747-1.026 2.747-1.026.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.741 0 .269.18.579.688.481C19.138 20.161 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
-              <span style={{ fontSize:12, color:'var(--text)' }}>ash-kernel ↗</span>
-            </a>
-          </div>
-        </Card>
+          <Card title="Library">
+            <Row label="Auto-fill metadata" desc="Search Steam when browsing for a .exe">
+              <Toggle value={local.autoFill!==false} onChange={v=>set('autoFill',v)} />
+            </Row>
+            <Row label={`${games.length} game${games.length!==1?'s':''} in library`} last>
+              <button onClick={handleExport}
+                style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)', fontSize:12, cursor:'pointer', fontFamily:'var(--font-body)', transition:'background .15s' }}
+                onMouseEnter={e=>e.currentTarget.style.background='var(--bg4)'}
+                onMouseLeave={e=>e.currentTarget.style.background='var(--bg3)'}>
+                📤 Export JSON
+              </button>
+            </Row>
+          </Card>
 
+          
+
+          <Card title="HowLongToBeat">
+            <div style={{ padding:'10px 16px', fontSize:12, color:'var(--text3)', lineHeight:1.6 }}>
+              Automatically shows estimated completion times on game detail panels — no account or API key needed.
+            </div>
+            <Row label="Enable HowLongToBeat" desc="Shows Main Story, Side Quests and 100% times" last>
+              <Toggle value={local.hltbEnabled!==false} onChange={v=>set('hltbEnabled',v)} />
+            </Row>
+          </Card>
+
+          <Card title="About">
+            <div style={{ padding:'14px 16px', display:'flex', gap:12, alignItems:'center', borderBottom:'1px solid var(--border)' }}>
+              <img src={logoSvg} alt="" style={{ width:40, height:40, borderRadius:10, flexShrink:0 }} />
+              <div>
+                <div style={{ fontFamily:'var(--font-display)', fontWeight:900, fontSize:14, color:'var(--text)' }}>SpiceDeck</div>
+                <div style={{ fontSize:11, color:'var(--text3)', marginTop:2 }}>v{version} · Electron 28 · React 18</div>
+                <div style={{ display:'flex', gap:8, marginTop:6 }}>
+                  {[
+                    ['Privacy Policy', 'https://ash-kernel.github.io/spicedeck/#legal'],
+                    ['Terms',          'https://ash-kernel.github.io/spicedeck/#legal'],
+                    ['GitHub ↗',       'https://github.com/ash-kernel'],
+                  ].map(([label, url]) => (
+                    <span key={label} onClick={() => window.spicegames?.openExternal(url)}
+                      style={{ fontSize:10, color:'var(--accent)', cursor:'pointer' }}>
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <Row label="Check for updates" last>
+              <button onClick={checkForUpdates} disabled={updateChecking||!IS}
+                style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)', fontSize:12, cursor:updateChecking?'default':'pointer', fontFamily:'var(--font-body)', opacity:updateChecking?.6:1, transition:'background .15s' }}
+                onMouseEnter={e=>e.currentTarget.style.background='var(--bg4)'}
+                onMouseLeave={e=>e.currentTarget.style.background='var(--bg3)'}>
+                {updateChecking ? '…' : '↻ Check Now'}
+              </button>
+            </Row>
+          </Card>
+
+        </div>
       </div>
     </div>
   )
