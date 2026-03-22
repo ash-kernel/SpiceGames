@@ -1,10 +1,10 @@
 {
   "name": "spicedeck",
-  "version": "1.0.0",
-  "description": "SpiceDeck — A game launcher.",
+  "version": "3.0.0",
+  "description": "SpiceDeck — Personal Game Launcher",
   "main": "src/main/main.js",
-  "author": "SpiceDeck",
-  "license": "UNLICENSED",
+  "author": "ash-kernel",
+  "license": "LICENSE.txt",
   "scripts": {
     "dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
     "build": "vite build && electron-builder",
@@ -43,25 +43,19 @@
     ],
     "win": {
       "target": [
-        {
-          "target": "nsis",
-          "arch": [ "x64" ]
-        },
-        {
-          "target": "portable",
-          "arch": [ "x64" ]
-        }
+        { "target": "nsis",     "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
       ],
       "icon": "assets/icons/icon.ico",
       "requestedExecutionLevel": "asInvoker"
     },
     "mac": {
-      "target": [ "dmg" ],
+      "target": ["dmg"],
       "icon": "assets/icons/icon.icns",
       "category": "public.app-category.entertainment"
     },
     "linux": {
-      "target": [ "AppImage", "deb" ],
+      "target": ["AppImage","deb"],
       "icon": "assets/icons/icon.png",
       "category": "Game"
     },
@@ -70,7 +64,13 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "SpiceDeck"
+      "shortcutName": "SpiceDeck",
+      "installerIcon": "assets/icons/icon.ico",
+      "uninstallerIcon": "assets/icons/icon.ico",
+      "installerHeaderIcon": "assets/icons/icon.ico",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true,
+      "menuCategory": "SpiceDeck"
     }
   }
 }

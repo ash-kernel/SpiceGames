@@ -4,7 +4,6 @@ import toast from 'react-hot-toast'
 
 const IS = typeof window !== 'undefined' && window.spicegames?.isElectron
 
-
 const STEP = { SEARCH:'search', DETAIL:'detail', LINK:'link', DONE:'done' }
 
 export default function AddGameModal() {
@@ -15,12 +14,11 @@ export default function AddGameModal() {
   const [query,      setQuery]    = useState('')
   const [searching,  setSearching]= useState(false)
   const [results,    setResults]  = useState([])
-  const [selected,   setSelected] = useState(null)
-  const [details,    setDetails]  = useState(null)
+  const [selected,   setSelected] = useState(null)   // game from search
+  const [details,    setDetails]  = useState(null)   // full details
   const [loadingDet, setLoadDet]  = useState(false)
   const [exePath,    setExePath]  = useState('')
   const [exeName,    setExeName]  = useState('')
-
 
   const [form, setForm] = useState({
     name:'', cover:'', description:'', genres:[], developer:'',
@@ -28,7 +26,6 @@ export default function AddGameModal() {
     tags:[], platforms:[], website:'', steamId:'', price:'',
   })
   const setF = (k, v) => setForm(f => ({ ...f, [k]: v }))
-
 
   const doSearch = async (q = query) => {
     if (!q.trim()) return
@@ -39,7 +36,6 @@ export default function AddGameModal() {
     } catch { setResults([]) }
     setSearching(false)
   }
-
 
   const handleSelect = async (result) => {
     setSelected(result)
@@ -75,7 +71,6 @@ export default function AddGameModal() {
     setStep(STEP.DETAIL)
   }
 
-
   const handleBrowseExe = async () => {
     if (!IS) { toast('Browse only works in the desktop app', { icon:'💡' }); return }
     const result = await window.spicegames.browseExe()
@@ -83,7 +78,6 @@ export default function AddGameModal() {
     setExePath(result.exePath)
     setExeName(result.name)
   }
-
 
   const handleSave = () => {
     if (!exePath) { toast.error('Please select the game executable first'); return }
@@ -207,9 +201,12 @@ export default function AddGameModal() {
 
             <div style={{ marginTop:16, paddingTop:16, borderTop:'1px solid var(--border)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
               <span style={{ fontSize:12, color:'var(--text3)' }}>Can't find it? Add manually</span>
-              <button onClick={() => { setForm(f=>({...f,name:''})); setStep(STEP.LINK) }}
+              <button onClick={() => {
+                  setForm({ name:'', cover:'', description:'', genres:[], developer:'', publisher:'', released:'', metacritic:'', reviewScore:'', tags:[], platforms:[], website:'', steamId:'', price:'' })
+                  setStep(STEP.DETAIL)
+                }}
                 style={{ padding:'8px 16px', borderRadius:8, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontSize:13, cursor:'pointer', fontFamily:'var(--font-body)' }}>
-                Skip search →
+                Add manually →
               </button>
             </div>
           </div>

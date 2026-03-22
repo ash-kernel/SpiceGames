@@ -2,8 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useStore } from '../store/useStore'
 import toast from 'react-hot-toast'
 
-const IS = typeof window !== 'undefined' && window.spicegames?.isElectron
-
+const IS = typeof window !== 'undefined' && window.spicegames != null
 
 const GENRES = [
   { id:'Action',      emoji:'⚔️' },
@@ -20,20 +19,24 @@ const GENRES = [
   { id:'Fighting',    emoji:'🥊' },
 ]
 
-
 function DiscoverCard({ game, index, already, onSelect }) {
   const [hov,    setHov]    = useState(false)
   const [loaded, setLoaded] = useState(false)
-  const [imgSrc, setImgSrc] = useState(game.cover)
-  const [triedFallback, setTriedFallback] = useState(false)
+  const sid = game.steamId
+  const FALLBACKS = [
+    game.cover,
+    sid ? `https://cdn.akamai.steamstatic.com/steam/apps/${sid}/capsule_616x353.jpg` : null,
+    game.header,
+    sid ? `https://cdn.akamai.steamstatic.com/steam/apps/${sid}/header.jpg` : null,
+  ].filter(Boolean).filter((v,i,a) => a.indexOf(v) === i) // unique, non-null
+
+  const [imgIdx, setImgIdx] = useState(0)
+  const imgSrc = FALLBACKS[imgIdx] || null
 
   const handleImgError = () => {
-    if (!triedFallback && game.header) {
-      setImgSrc(game.header)
-      setTriedFallback(true)
-    } else {
-      setImgSrc(null)
-    }
+    setLoaded(false)
+    if (imgIdx < FALLBACKS.length - 1) setImgIdx(i => i + 1)
+    else setImgIdx(FALLBACKS.length) // past end = show placeholder
   }
 
   return (
@@ -60,11 +63,11 @@ function DiscoverCard({ game, index, already, onSelect }) {
       <div style={{ aspectRatio: '3/4', position: 'relative', overflow: 'hidden', background: 'var(--bg4)' }}>
 
         {}
-        {!loaded && imgSrc && (
+        {!loaded && imgSrc && imgIdx < FALLBACKS.length && (
           <div className="shimmer" style={{ position: 'absolute', inset: 0, borderRadius: 0 }} />
         )}
 
-        {imgSrc ? (
+        {imgSrc && imgIdx < FALLBACKS.length + 1 ? (
           <img
             src={imgSrc}
             alt={game.name}
@@ -74,7 +77,7 @@ function DiscoverCard({ game, index, already, onSelect }) {
               width: '100%',
               height: '100%',
               objectFit: 'cover',
-              objectPosition: 'top center',
+              objectPosition: 'top center',  // keep top of portrait art visible
               display: 'block',
               opacity: loaded ? 1 : 0,
               transition: 'opacity .4s ease, transform .5s ease',
@@ -82,7 +85,6 @@ function DiscoverCard({ game, index, already, onSelect }) {
             }}
           />
         ) : (
-
           <div style={{
             width: '100%', height: '100%',
             display: 'flex', flexDirection: 'column',
@@ -145,7 +147,6 @@ function DiscoverCard({ game, index, already, onSelect }) {
   )
 }
 
-
 function DiscoverDetailModal({ game, onClose, onAddToLibrary }) {
   const [details, setDetails]   = useState(null)
   const [loading, setLoading]   = useState(true)
@@ -177,10 +178,13 @@ function DiscoverDetailModal({ game, onClose, onAddToLibrary }) {
   }, [])
 
   const d = details || game
-  const heroImg = d.header || (game.steamId ? `https://cdn.akamai.steamstatic.com/steam/apps/${game.steamId}/header.jpg` : null)
+  const sid = game.steamId || d.steamId
+  const heroImg = d.header || d.capsule
+    || (sid ? `https://cdn.akamai.steamstatic.com/steam/apps/${sid}/capsule_616x353.jpg` : null)
+    || d.cover || game.cover
+    || (sid ? `https://cdn.akamai.steamstatic.com/steam/apps/${sid}/header.jpg` : null)
 
   const handleAddToLibrary = () => {
-
     onAddToLibrary(d)
     onClose()
   }
@@ -221,7 +225,14 @@ function DiscoverDetailModal({ game, onClose, onAddToLibrary }) {
             <div style={{ aspectRatio: '3/4', borderRadius: 10, overflow: 'hidden', background: 'var(--bg4)', marginBottom: 14 }}>
               {imgSrc ? (
                 <img src={imgSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
-                  onError={() => { if (!triedFb && d.header) { setImgSrc(d.header); setTriedFb(true) } else setImgSrc(null) }} />
+                  onError={() => {
+                    if (!triedFb) {
+                      const next = d.header || d.capsule || game.header ||
+                        (game.steamId ? `https://cdn.akamai.steamstatic.com/steam/apps/${game.steamId}/capsule_616x353.jpg` : null)
+                      if (next && next !== imgSrc) { setImgSrc(next); setTriedFb(true) }
+                      else setImgSrc(null)
+                    } else setImgSrc(null)
+                  }} />
               ) : (
                 <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>🎮</div>
               )}
@@ -360,7 +371,6 @@ function DiscoverDetailModal({ game, onClose, onAddToLibrary }) {
   )
 }
 
-
 export default function StorePage() {
   const games       = useStore(s => s.games)
   const setAddOpen  = useStore(s => s.setAddGameOpen)
@@ -373,13 +383,11 @@ export default function StorePage() {
   const [detailGame,  setDetailGame]  = useState(null)
   const [prefilledGame, setPrefilledGame] = useState(null)
 
-
   const doSearch = useCallback(async (q = query) => {
     if (!q.trim()) return
     setLoading(true); setSearched(true)
     try {
       const res = IS ? await window.spicegames.searchGame({ name: q }) : []
-
       setResults((res || []).map(r => ({ ...r, source: 'Steam' })))
     } catch { setResults([]) }
     setLoading(false)
@@ -391,17 +399,26 @@ export default function StorePage() {
     doSearch(g)
   }
 
-
   useEffect(() => {
-    if (IS) doSearch('top rated popular games')
+    if (!IS) return
+    setLoading(true); setSearched(true)
+    window.spicegames.getFeaturedGames()
+      .then(res => {
+        const games = (res || []).map(r => ({ ...r, source: 'Steam' }))
+        setResults(games)
+        setSearched(true)
+        setLoading(false)
+      })
+      .catch(err => {
+        console.error('Featured games error:', err)
+        setLoading(false)
+        setSearched(false)
+      })
   }, [])
 
   const inLibrary = (steamId) => games.some(g => g.steamId === steamId)
 
-
   const handleAddFromDiscover = (gameData) => {
-
-
     setAddOpen(true)
   }
 
@@ -436,7 +453,7 @@ export default function StorePage() {
             />
             {query && (
               <button onClick={() => { setQuery(''); setResults([]); setSearched(false) }}
-                style={{ background: 'var(--bg4)', border: 'none', color: 'var(--text3)', cursor: 'pointer', width: 20, height: 20, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>×</button>
+                style={{ background:'none', border:'none', color:'var(--text3)', cursor:'pointer', width:20, height:20, minWidth:20, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, flexShrink:0, lineHeight:'1' }}>×</button>
             )}
           </div>
           <button onClick={() => doSearch()} disabled={loading || !query.trim()}
@@ -462,13 +479,7 @@ export default function StorePage() {
 
       {}
       <div style={{ flex: 1, overflowY: 'auto', padding: '18px 22px 60px' }}>
-        {!IS && (
-          <div style={{ textAlign: 'center', padding: '80px 20px', color: 'var(--text2)' }}>
-            <div style={{ fontSize: 52, marginBottom: 14, opacity: .25 }}>🖥</div>
-            <p style={{ fontSize: 16, marginBottom: 6 }}>Desktop app required</p>
-            <p style={{ fontSize: 13, color: 'var(--text3)' }}>Run SpiceGames in Electron to browse the Steam catalogue</p>
-          </div>
-        )}
+
 
         {IS && loading && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(175px, 1fr))', gap: 14 }}>

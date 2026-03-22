@@ -1,6 +1,8 @@
 import React from 'react'
 import logoSvg from '../logo.svg'
 
+const api = typeof window !== 'undefined' && (window.spicegames || window.spicedeck)
+
 export default function TitleBar() {
   return (
     <div className="drag" style={{ height:42, background:'var(--bg2)', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'space-between', paddingLeft:14, paddingRight:12, flexShrink:0 }}>
@@ -14,7 +16,8 @@ export default function TitleBar() {
           { fn:'maximize', col:'#10B981', sym:'⤢' },
           { fn:'close',    col:'#EF4444', sym:'×' },
         ].map(b => (
-          <button key={b.fn} onClick={() => window.spicedeck[b.fn]()} 
+          <button key={b.fn}
+            onClick={() => api && typeof api[b.fn] === 'function' && api[b.fn]()}
             style={{ width:28, height:28, borderRadius:'50%', border:'none', background:'var(--bg4)', color:'var(--text3)', fontSize:14, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all .15s' }}
             onMouseEnter={e=>{e.currentTarget.style.background=b.col;e.currentTarget.style.color='#fff'}}
             onMouseLeave={e=>{e.currentTarget.style.background='var(--bg4)';e.currentTarget.style.color='var(--text3)'}}>

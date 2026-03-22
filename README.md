@@ -40,39 +40,40 @@ Organize, track, and launch your entire game library — all in one place.
 
 ### 🎮 Game Library
 - Add **any game** from your system (`.exe`)
-- Clean and organized library view
-- Fast launching with one click
+- Clean, organized library view
+- Add & launch games with one click
 
 ### 🧠 Smart Metadata
-- Auto-fetch:
-  - Cover art  
-  - Descriptions  
-  - Genres  
-  - Screenshots  
-- Powered by Steam, SteamSpy & OpenCritic
+- Auto-fetch game information:
+  - Cover art & screenshots
+  - Game descriptions
+  - Genres & tags
+- Data from Steam, SteamSpy & OpenCritic
 
 ### 📊 Game Insights
-- Track **playtime automatically**
-- View ratings from:
-  - Steam users  
-  - Metacritic  
-  - OpenCritic  
+- **Track playtime** automatically
+- View ratings & reviews:
+  - Steam community scores
+  - Metacritic ratings
+  - OpenCritic scores
 
-### 🔎 Discover
-- Explore **50,000+ games**
-- Search, preview, and add instantly
-- View trailers and screenshots before installing
+### 🔎 Discover & Explore
+- Browse **50,000+ games**
+- Search by title, genre, or tags
+- Preview games before adding
+- Watch trailers & view screenshots
 
-### 🎨 Customization
-- Multiple themes:
-  - Crimson  
-  - Dark  
-  - Neon  
-  - Ember  
+### 🎨 Themes & Customization
+- 4 beautiful themes:
+  - Crimson
+  - Dark
+  - Neon
+  - Ember
 
 ### ⚡ System Integration
-- Optional **run on startup**
-- Fully local — no accounts, no login
+- Run on Windows startup *(optional)*
+- Fully offline & local
+- No accounts or login required
 
 ---
 
