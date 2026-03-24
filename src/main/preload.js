@@ -35,6 +35,7 @@ contextBridge.exposeInMainWorld('spicegames', {
   getGameDetails: (opts) => ipcRenderer.invoke('get-game-details', opts),
 
   // Utils
+  getSystemInfo:    ()  => ipcRenderer.invoke('get-system-info'),
   revealInExplorer: (p) => ipcRenderer.invoke('reveal-in-explorer', p),
   getAppVersion:    ()  => ipcRenderer.invoke('get-app-version'),
 

@@ -48,8 +48,10 @@ export default function LibraryPage() {
   const [searchVal, setSearchVal]   = useState(searchQuery)
   const [importing, setImporting]   = useState(false)
   const [scanning,  setScanning]    = useState(false)
+  const [carouselIdx, setCarouselIdx] = useState(0)
   const searchRef                   = useRef(null)
   const timerRef                    = useRef(null)
+  const carouselIntervalRef         = useRef(null)
 
   const filtered      = getFilteredGames()
   const recentPlayed  = getRecentlyPlayed()
@@ -58,6 +60,15 @@ export default function LibraryPage() {
 
   useEffect(() => {
     computeNudges()
+  }, [games])
+
+  useEffect(() => {
+    const featured = games.filter(g => g.reviewScore && g.reviewScore >= 75).slice(0, 10)
+    if (featured.length === 0) return
+    carouselIntervalRef.current = setInterval(() => {
+      setCarouselIdx(i => (i + 1) % featured.length)
+    }, 5000)
+    return () => clearInterval(carouselIntervalRef.current)
   }, [games])
 
   const onSearch = (v) => {
@@ -136,14 +147,14 @@ export default function LibraryPage() {
           </div>
           <div style={{ flex:1 }} />
 
-          <div style={{ display:'flex', alignItems:'center', gap:8, background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:50, padding:'7px 14px', flex:1, maxWidth:260 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:50, padding:'7px 14px', flex:1, maxWidth:260, position:'relative' }}>
             <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24" style={{ color:'var(--text3)', flexShrink:0 }}>
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
             <input ref={searchRef} value={searchVal} onChange={e=>onSearch(e.target.value)}
               placeholder="Search… (press /)"
-              style={{ flex:1, background:'none', border:'none', outline:'none', color:'var(--text)', fontSize:13, fontFamily:'var(--font-body)' }} />
-            {searchVal && <button onClick={()=>{onSearch('');setSearchVal('')}} style={{ background:'var(--bg4)', border:'none', color:'var(--text2)', cursor:'pointer', width:20, height:20, minWidth:20, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, flexShrink:0, lineHeight:'1' }}>×</button>}
+              style={{ flex:1, background:'none', border:'none', outline:'none', color:'var(--text)', fontSize:13, fontFamily:'var(--font-body)', paddingRight:'24px' }} />
+            {searchVal && <button onClick={()=>{onSearch('');setSearchVal('')}} style={{ position:'absolute', right:14, background:'none', border:'none', color:'var(--text2)', cursor:'pointer', width:16, height:16, minWidth:16, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, flexShrink:0, lineHeight:'1', padding:0 }}>×</button>}
           </div>
 
           <div style={{ display:'flex', gap:4 }}>
@@ -220,6 +231,42 @@ export default function LibraryPage() {
       </div>
 
       <div style={{ flex:1, overflowY:'auto', padding:'16px 20px 40px', position:'relative', zIndex:1 }}>
+
+        {games.filter(g => g.reviewScore && g.reviewScore >= 75).length > 0 && !searchVal && filterGenre === 'all' && filterStatus === 'all' && (
+          <div style={{ marginBottom:24, marginTop:-6 }}>
+            {(() => {
+              const featured = games.filter(g => g.reviewScore && g.reviewScore >= 75).slice(0, 10)
+              if (featured.length === 0) return null
+              const game = featured[carouselIdx]
+              const heroImg = game.hero || game.header || (game.steamId ? `https://cdn.akamai.steamstatic.com/steam/apps/${game.steamId}/library_hero.jpg` : null)
+              return (
+                <div style={{ position:'relative', height:280, borderRadius:16, overflow:'hidden', cursor:'pointer', transition:'all .3s', boxShadow:'0 20px 60px rgba(0,0,0,.6)', border:'1px solid rgba(var(--accent-rgb),.15)' }} onClick={() => setSelectedGame(game)}>
+                  {heroImg && <img src={heroImg} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', animation:'fadeIn .8s ease' }} onError={e=>e.target.style.display='none'} />}
+                  <div style={{ position:'absolute', inset:0, background:'linear-gradient(135deg,rgba(0,0,0,.5) 0%,rgba(0,0,0,.8) 100%)' }} />
+                  <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', justifyContent:'flex-end', padding:'32px' }}>
+                    <div style={{ marginBottom:12 }}>
+                      <span style={{ display:'inline-block', fontSize:11, fontWeight:800, padding:'4px 12px', borderRadius:8, background:'rgba(16,185,129,.9)', color:'#fff', marginBottom:8 }}>⭐ FEATURED</span>
+                      <h2 style={{ fontFamily:'var(--font-display)', fontSize:28, fontWeight:900, color:'#fff', textShadow:'0 4px 12px rgba(0,0,0,.8)', lineHeight:1.1, marginBottom:8 }}>{game.name}</h2>
+                      {game.developer && <p style={{ fontSize:14, color:'rgba(255,255,255,.7)', marginBottom:10 }}>{game.developer}{game.released ? ` · ${game.released.slice(0,4)}` : ''}</p>}
+                    </div>
+                    <div style={{ display:'flex', gap:12, alignItems:'center' }}>
+                      {game.reviewScore && <span style={{ fontSize:12, fontWeight:700, padding:'4px 12px', borderRadius:8, background:'rgba(99,102,241,.9)', color:'#fff' }}>👍 {game.reviewScore}%</span>}
+                      {game.metacritic && <span style={{ fontSize:12, fontWeight:700, padding:'4px 12px', borderRadius:8, background:'rgba(16,185,129,.6)', color:'#fff' }}>MC {game.metacritic}</span>}
+                      {game.genres?.length > 0 && <span style={{ fontSize:12, color:'rgba(255,255,255,.6)' }}>{game.genres.slice(0,2).join(' · ')}</span>}
+                    </div>
+                  </div>
+                  <div style={{ position:'absolute', bottom:16, right:16, display:'flex', gap:6, alignItems:'center' }}>
+                    {featured.map((_, i) => (
+                      <div key={i} 
+                        onClick={(e) => { e.stopPropagation(); setCarouselIdx(i) }}
+                        style={{ width: i === carouselIdx ? 24 : 8, height:8, borderRadius:4, background:i === carouselIdx ? 'var(--accent)' : 'rgba(255,255,255,.3)', cursor:'pointer', transition:'all .3s' }} />
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+        )}
 
         {nudges.length > 0 && !searchVal && (
           <div style={{ marginBottom:20, padding:'12px 16px', background:'rgba(99,102,241,.06)', border:'1px solid rgba(99,102,241,.15)', borderRadius:12 }}>

@@ -14,14 +14,16 @@ import GameNewsPage from './pages/GameNewsPage'
 import WishlistPage from './pages/WishlistPage'
 import WidgetPage from './pages/WidgetPage'
 import ControllerPage from './pages/ControllerPage'
+import SystemInfoPage from './pages/SystemInfoPage'
 import AddGameModal from './components/AddGameModal'
 import GameDetailPanel from './components/GameDetailPanel'
+
 import { useStore } from './store/useStore'
 import toast from 'react-hot-toast'
 
 const IS = typeof window !== 'undefined' && window.spicegames != null
 
-const ROUTES = ['/library','/itch','/deals','/news','/controller','/screenshots','/stats','/settings']
+const ROUTES = ['/library','/itch','/deals','/news','/controller','/screenshots','/stats','/settings', '/systeminfo']
 
 function GamepadNav() {
   const navigate        = useNavigate()
@@ -162,6 +164,7 @@ function AppLayout() {
               <Route path="/screenshots" element={<ScreenshotsPage />} />
               <Route path="/stats"       element={<StatsPage />} />
               <Route path="/settings"    element={<SettingsPage />} />
+              <Route path="/systeminfo"  element={<SystemInfoPage />} />
             </Routes>
           </div>
           {selectedGame && onLibrary && <GameDetailPanel />}

@@ -199,14 +199,35 @@ export default function SettingsPage() {
             <div style={{ padding:'10px 14px 6px', fontSize:12, color:'var(--text3)' }}>
               Hide tabs you don't use — they'll be removed from the sidebar.
             </div>
+            <Row label="Library" desc="Game collection and management">
+              <Toggle value={local.showLibrary!==false} onChange={v=>set('showLibrary',v)} />
+            </Row>
+            <Row label="Discover" desc="Trending and featured games">
+              <Toggle value={local.showDiscover!==false} onChange={v=>set('showDiscover',v)} />
+            </Row>
+            <Row label="Wishlist" desc="Your wishlist of games">
+              <Toggle value={local.showWishlist!==false} onChange={v=>set('showWishlist',v)} />
+            </Row>
             <Row label="itch.io" desc="Indie games browser">
               <Toggle value={local.showItch!==false} onChange={v=>set('showItch',v)} />
+            </Row>
+            <Row label="Controller" desc="Controller and input settings">
+              <Toggle value={local.showController!==false} onChange={v=>set('showController',v)} />
             </Row>
             <Row label="Game News" desc="PC Gamer, RPS, Eurogamer, IGN">
               <Toggle value={local.showNews!==false} onChange={v=>set('showNews',v)} />
             </Row>
-            <Row label="Deals" desc="CheapShark game deals aggregator" last>
+            <Row label="Deals" desc="CheapShark game deals aggregator">
               <Toggle value={local.showDeals!==false} onChange={v=>set('showDeals',v)} />
+            </Row>
+            <Row label="Screenshots" desc="Game screenshots collection">
+              <Toggle value={local.showScreenshots!==false} onChange={v=>set('showScreenshots',v)} />
+            </Row>
+            <Row label="Stats" desc="Gaming statistics and insights">
+              <Toggle value={local.showStats!==false} onChange={v=>set('showStats',v)} />
+            </Row>
+            <Row label="System Info" desc="Hardware and system details" last>
+              <Toggle value={local.showSystemInfo!==false} onChange={v=>set('showSystemInfo',v)} />
             </Row>
           </Card>
 

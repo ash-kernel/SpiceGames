@@ -1,4 +1,5 @@
 ﻿const { app, BrowserWindow, ipcMain, dialog, shell, Tray, Menu, nativeImage } = require('electron')
+const os = require('os')
 
 // ── Single instance lock ──────────────────────────────────────────────────────
 const gotLock = app.requestSingleInstanceLock()
@@ -15,6 +16,7 @@ const fs     = require('fs')
 const https  = require('https')
 const http   = require('http')
 const { spawn } = require('child_process')
+const si = require('systeminformation')
 
 const storePath = path.join(app.getPath('userData'), 'spicegames.json')
 function readStore()    { try { if (fs.existsSync(storePath)) return JSON.parse(fs.readFileSync(storePath, 'utf8')) } catch (_) {} return {} }
@@ -142,6 +144,47 @@ ipcMain.handle('save-games',      (_, games) => { setStore('games', games); retu
 ipcMain.handle('get-wishlist',    () => getStore('wishlist', []))
 ipcMain.handle('save-wishlist',   (_, items) => { setStore('wishlist', items); return { ok:true } })
 ipcMain.handle('get-app-version', () => app.getVersion())
+ipcMain.handle('get-system-info', async () => {
+  const cpu = await si.cpu()
+  const mem = await si.mem()
+  const os = await si.osInfo()
+  const gpu = await si.graphics()
+  const memLayout = await si.memLayout()
+  return {
+    cpu: {
+      manufacturer: cpu.manufacturer,
+      brand: cpu.brand,
+      speed: cpu.speed,
+      cores: cpu.cores,
+      physicalCores: cpu.physicalCores,
+    },
+    gpu: {
+      controllers: gpu.controllers.map(c => ({
+        vendor: c.vendor,
+        model: c.model,
+        vram: c.vram,
+      })),
+    },
+    mem: {
+      total: mem.total,
+      free: mem.free,
+      used: mem.used,
+    },
+    memLayout: memLayout.map(m => ({
+      manufacturer: m.manufacturer,
+      partNum: m.partNum,
+      size: m.size,
+      type: m.type,
+    })),
+    os: {
+      platform: os.platform,
+      distro: os.distro,
+      release: os.release,
+      kernel: os.kernel,
+      arch: os.arch,
+    },
+  }
+})
 ipcMain.handle('get-startup-status', () => {
   if (!app.isPackaged) return { enabled:false, supported:false, devMode:true }
   const s = app.getLoginItemSettings()

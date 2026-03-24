@@ -309,17 +309,17 @@ export default function WishlistPage() {
         </div>
         {/* Search to add */}
         <div style={{ position:'relative' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:8, background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:50, padding:'8px 14px' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:50, padding:'8px 14px', position:'relative' }}>
             <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24" style={{ color:'var(--text3)', flexShrink:0 }}>
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
             <input
               value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Search games to add to wishlist…"
-              style={{ flex:1, background:'none', border:'none', outline:'none', color:'var(--text)', fontSize:13, fontFamily:'var(--font-body)' }}
+              style={{ flex:1, background:'none', border:'none', outline:'none', color:'var(--text)', fontSize:13, fontFamily:'var(--font-body)', paddingRight:'24px' }}
             />
-            {searching && <div style={{ width:12, height:12, border:'2px solid var(--accent)', borderTopColor:'transparent', borderRadius:'50%', animation:'spin .7s linear infinite', flexShrink:0 }} />}
-            {search && <button onClick={() => { setSearch(''); setSearchRes([]) }} style={{ background:'var(--bg4)', border:'none', color:'var(--text2)', cursor:'pointer', width:18, height:18, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, flexShrink:0 }}>×</button>}
+            {searching && <div style={{ position:'absolute', right:14, width:12, height:12, border:'2px solid var(--accent)', borderTopColor:'transparent', borderRadius:'50%', animation:'spin .7s linear infinite', flexShrink:0 }} />}
+            {search && !searching && <button onClick={() => { setSearch(''); setSearchRes([]) }} style={{ position:'absolute', right:14, background:'none', border:'none', color:'var(--text2)', cursor:'pointer', width:16, height:16, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, flexShrink:0, padding:0 }}>×</button>}
           </div>
           {searchRes.length > 0 && (
             <div style={{ position:'absolute', top:'calc(100% + 6px)', left:0, right:0, background:'var(--bg2)', border:'1px solid var(--border2)', borderRadius:12, overflow:'hidden', zIndex:100, boxShadow:'0 12px 32px rgba(0,0,0,.6)' }}>

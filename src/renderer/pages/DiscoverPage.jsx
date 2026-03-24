@@ -518,18 +518,18 @@ export default function DiscoverPage() {
             ))}
           </div>
           {/* Search */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'var(--bg3)', border: '1px solid var(--border2)', borderRadius: 50, padding: '7px 12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'var(--bg3)', border: '1px solid var(--border2)', borderRadius: 50, padding: '7px 12px', position: 'relative' }}>
             <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24" style={{ color: 'var(--text3)', flexShrink: 0 }}>
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
             <input
               value={query} onChange={e => setQuery(e.target.value)}
               placeholder="Search games…"
-              style={{ background: 'none', border: 'none', outline: 'none', color: 'var(--text)', fontSize: 12, fontFamily: 'var(--font-body)', width: 160 }}
+              style={{ background: 'none', border: 'none', outline: 'none', color: 'var(--text)', fontSize: 12, fontFamily: 'var(--font-body)', width: 160, paddingRight: '20px' }}
             />
             {query && (
               <button onClick={() => setQuery('')}
-                style={{ background: 'var(--bg4)', border: 'none', color: 'var(--text2)', cursor: 'pointer', width: 18, height: 18, minWidth: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11 }}>
+                style={{ position: 'absolute', right: 10, background: 'none', border: 'none', color: 'var(--text2)', cursor: 'pointer', width: 16, height: 16, minWidth: 16, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, padding: 0 }}>
                 ×
               </button>
             )}

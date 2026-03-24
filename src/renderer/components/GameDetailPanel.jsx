@@ -55,6 +55,7 @@ export default function GameDetailPanel() {
 
   const [tab,         setTab]        = useState('about')
   const [confirmDel,  setConfirmDel] = useState(false)
+  const [editMode,    setEditMode]   = useState(false)
   const [activeShot,  setActiveShot] = useState(null)
   const [notes,       setNotes]      = useState('')
   const [launchArgs,  setLaunchArgs] = useState('')
@@ -67,6 +68,14 @@ export default function GameDetailPanel() {
   const [achievements,setAchs]       = useState(null)
   const [hltbData,    setHltb]       = useState(null)
   const [igdbData,    setIgdb]       = useState(null)
+  const [editName,    setEditName]   = useState(game.name)
+  const [editDev,     setEditDev]    = useState(game.developer || '')
+  const [editPub,     setEditPub]    = useState(game.publisher || '')
+  const [editDesc,    setEditDesc]   = useState(game.description || '')
+  const [editRating,  setEditRating] = useState(game.reviewScore || '')
+  const [editPrice,   setEditPrice]  = useState(game.price || '')
+  const [editGenres,  setEditGenres] = useState((game.genres || []).join(', '))
+  const [editHero,    setEditHero]   = useState(game.hero || game.header || '')
 
   const isRunning = runningGames.has(game?.id)
 
@@ -74,12 +83,21 @@ export default function GameDetailPanel() {
     if (!game) return
     setTab('about')
     setConfirmDel(false)
+    setEditMode(false)
     setActiveShot(null)
     setNotes(game.notes || '')
     setLaunchArgs(game.launchArgs || '')
     setPreLaunch(game.preLaunchScript || '')
     setNewExePath('')
     setNewExeLabel('')
+    setEditName(game.name)
+    setEditDev(game.developer || '')
+    setEditPub(game.publisher || '')
+    setEditDesc(game.description || '')
+    setEditRating(game.reviewScore || '')
+    setEditPrice(game.price || '')
+    setEditGenres((game.genres || []).join(', '))
+    setEditHero(game.hero || game.header || '')
   }, [game?.id])
 
   if (!game) return null
@@ -90,6 +108,35 @@ export default function GameDetailPanel() {
   }
   const handleReveal  = async () => { if (IS) await window.spicegames.revealInExplorer(game.exePath) }
   const handleDelete  = () => { removeGame(game.id); toast(`${game.name} removed`) }
+  const handleSaveEdit = () => { 
+    const genreArray = editGenres.split(',').map(s => s.trim()).filter(Boolean)
+    // Capitalize first letter and remove duplicates
+    const genres = genreArray.map(g => g.charAt(0).toUpperCase() + g.slice(1).toLowerCase())
+    const uniqueGenres = [...new Set(genres)]
+    updateGame(game.id, { 
+      name: editName, 
+      developer: editDev, 
+      publisher: editPub,
+      description: editDesc,
+      reviewScore: editRating ? parseInt(editRating) : undefined,
+      price: editPrice,
+      genres: uniqueGenres,
+      hero: editHero || undefined
+    }); 
+    setEditMode(false); 
+    toast.success('Game info updated') 
+  }
+  const handleCancelEdit = () => { 
+    setEditMode(false); 
+    setEditName(game.name); 
+    setEditDev(game.developer || ''); 
+    setEditPub(game.publisher || '');
+    setEditDesc(game.description || '');
+    setEditRating(game.reviewScore || '');
+    setEditPrice(game.price || '');
+    setEditGenres((game.genres || []).join(', '));
+    setEditHero(game.hero || game.header || '');
+  }
   const saveNotes     = () => { updateGame(game.id, { notes }); toast.success('Notes saved') }
   const saveLaunchCfg = () => { updateGame(game.id, { launchArgs, preLaunchScript: preLaunch }); toast.success('Launch config saved') }
 
@@ -168,7 +215,7 @@ export default function GameDetailPanel() {
           style={{ flex:1, padding:'10px', borderRadius:10, border:'none', background:isRunning?'rgba(16,185,129,.12)':`linear-gradient(135deg,var(--accent),var(--accent2))`, color:isRunning?'var(--success)':'#fff', fontSize:13, fontWeight:800, cursor:isRunning?'default':'pointer', fontFamily:'var(--font-display)', boxShadow:isRunning?'none':'var(--shadow-glow)', letterSpacing:'.4px', transition:'all .18s' }}>
           {isRunning ? '▶ RUNNING' : '▶ PLAY NOW'}
         </button>
-        {[['📁', handleReveal, 'Show in Explorer'], ['🗑', ()=>setConfirmDel(true), 'Remove']].map(([icon, fn, title]) => (
+        {[['✎', ()=>setEditMode(true), 'Edit Info'], ['📁', handleReveal, 'Show in Explorer'], ['🗑', ()=>setConfirmDel(true), 'Remove']].map(([icon, fn, title]) => (
           <button key={title} onClick={fn} title={title}
             style={{ width:38, height:38, borderRadius:9, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontSize:14, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all .18s' }}
             onMouseEnter={e => { e.currentTarget.style.background = title==='Remove' ? 'rgba(239,68,68,.1)' : 'var(--bg4)'; e.currentTarget.style.color = title==='Remove' ? 'var(--danger)' : 'var(--text)' }}
@@ -183,6 +230,57 @@ export default function GameDetailPanel() {
           <span style={{ fontSize:13, color:'var(--danger)', flex:1 }}>Remove "{game.name}"?</span>
           <button onClick={handleDelete} style={{ padding:'5px 12px', borderRadius:6, border:'none', background:'var(--danger)', color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer' }}>Remove</button>
           <button onClick={() => setConfirmDel(false)} style={{ padding:'5px 12px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontSize:12, cursor:'pointer' }}>Cancel</button>
+        </div>
+      )}
+
+      {editMode && (
+        <div style={{ padding:'12px 14px', background:'rgba(99,102,241,.07)', borderBottom:'1px solid rgba(99,102,241,.18)', display:'flex', flexDirection:'column', gap:10, flexShrink:0, maxHeight:'45vh', overflowY:'auto' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+            <div>
+              <label style={{ fontSize:11, color:'var(--text2)', fontWeight:600, display:'block', marginBottom:5 }}>Game Name</label>
+              <input value={editName} onChange={e => setEditName(e.target.value)}
+                style={{ width:'100%', padding:'8px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)', fontSize:12, fontFamily:'var(--font-body)', outline:'none' }} />
+            </div>
+            <div>
+              <label style={{ fontSize:11, color:'var(--text2)', fontWeight:600, display:'block', marginBottom:5 }}>Rating %</label>
+              <input type="number" value={editRating} onChange={e => setEditRating(e.target.value)} min="0" max="100" placeholder="0-100"
+                style={{ width:'100%', padding:'8px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)', fontSize:12, fontFamily:'var(--font-body)', outline:'none' }} />
+            </div>
+            <div>
+              <label style={{ fontSize:11, color:'var(--text2)', fontWeight:600, display:'block', marginBottom:5 }}>Developer</label>
+              <input value={editDev} onChange={e => setEditDev(e.target.value)}
+                style={{ width:'100%', padding:'8px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)', fontSize:12, fontFamily:'var(--font-body)', outline:'none' }} />
+            </div>
+            <div>
+              <label style={{ fontSize:11, color:'var(--text2)', fontWeight:600, display:'block', marginBottom:5 }}>Publisher</label>
+              <input value={editPub} onChange={e => setEditPub(e.target.value)}
+                style={{ width:'100%', padding:'8px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)', fontSize:12, fontFamily:'var(--font-body)', outline:'none' }} />
+            </div>
+            <div>
+              <label style={{ fontSize:11, color:'var(--text2)', fontWeight:600, display:'block', marginBottom:5 }}>Price</label>
+              <input value={editPrice} onChange={e => setEditPrice(e.target.value)} placeholder="$XX.99"
+                style={{ width:'100%', padding:'8px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)', fontSize:12, fontFamily:'var(--font-body)', outline:'none' }} />
+            </div>
+            <div>
+              <label style={{ fontSize:11, color:'var(--text2)', fontWeight:600, display:'block', marginBottom:5 }}>Genres (comma-sep)</label>
+              <input value={editGenres} onChange={e => setEditGenres(e.target.value)} placeholder="Action, Adventure, RPG"
+                style={{ width:'100%', padding:'8px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)', fontSize:12, fontFamily:'var(--font-body)', outline:'none' }} />
+            </div>
+          </div>
+          <div>
+            <label style={{ fontSize:11, color:'var(--text2)', fontWeight:600, display:'block', marginBottom:5 }}>Banner Image URL</label>
+            <input value={editHero} onChange={e => setEditHero(e.target.value)} placeholder="https://..."
+              style={{ width:'100%', padding:'8px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)', fontSize:12, fontFamily:'var(--font-body)', outline:'none' }} />
+          </div>
+          <div>
+            <label style={{ fontSize:11, color:'var(--text2)', fontWeight:600, display:'block', marginBottom:5 }}>Description</label>
+            <textarea value={editDesc} onChange={e => setEditDesc(e.target.value)}
+              style={{ width:'100%', padding:'8px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)', fontSize:12, fontFamily:'var(--font-body)', outline:'none', resize:'none', minHeight:60 }} />
+          </div>
+          <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
+            <button onClick={handleCancelEdit} style={{ padding:'6px 12px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontSize:12, cursor:'pointer' }}>Cancel</button>
+            <button onClick={handleSaveEdit} style={{ padding:'6px 12px', borderRadius:6, border:'none', background:'var(--accent)', color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer' }}>Save Changes</button>
+          </div>
         </div>
       )}
 

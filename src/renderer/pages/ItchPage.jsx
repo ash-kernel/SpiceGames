@@ -217,13 +217,13 @@ export default function ItchPage() {
             <p style={{ fontSize:12, color:'var(--text3)', marginTop:3 }}>Indie games · click a tag to browse</p>
           </div>
           <div style={{ flex:1 }} />
-          <div style={{ display:'flex', alignItems:'center', gap:8, background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:50, padding:'7px 14px', width:220 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:50, padding:'7px 14px', width:220, position:'relative' }}>
             <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24" style={{ color:'var(--text3)', flexShrink:0 }}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             <input value={query} onChange={e => setQuery(e.target.value)}
               onKeyDown={e => e.key==='Enter' && doSearch(query)}
               placeholder="Search games…"
-              style={{ flex:1, background:'none', border:'none', outline:'none', color:'var(--text)', fontSize:13, fontFamily:'var(--font-body)' }} />
-            {query && <button onClick={() => setQuery('')} style={{ background:'var(--bg4)', border:'none', color:'var(--text2)', cursor:'pointer', width:20, height:20, minWidth:20, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, flexShrink:0 }}>×</button>}
+              style={{ flex:1, background:'none', border:'none', outline:'none', color:'var(--text)', fontSize:13, fontFamily:'var(--font-body)', paddingRight:'24px' }} />
+            {query && <button onClick={() => setQuery('')} style={{ position:'absolute', right:14, background:'none', border:'none', color:'var(--text2)', cursor:'pointer', width:16, height:16, minWidth:16, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, flexShrink:0, padding:0 }}>×</button>}
           </div>
           {query && <button onClick={() => doSearch(query)} disabled={searching}
             style={{ padding:'7px 16px', borderRadius:50, border:'none', background:`linear-gradient(135deg,var(--accent),var(--accent2))`, color:'#fff', fontSize:12, fontWeight:700, cursor:searching?'default':'pointer', opacity:searching?.6:1 }}>

@@ -79,10 +79,17 @@ export default function AddGameModal() {
     setExeName(result.name)
   }
 
+  const normalizeGenres = (genreInput) => {
+    const genreArray = Array.isArray(genreInput) ? genreInput : genreInput.split(',').map(s=>s.trim()).filter(Boolean)
+    // Capitalize first letter and remove duplicates
+    const normalized = genreArray.map(g => g.charAt(0).toUpperCase() + g.slice(1).toLowerCase())
+    return [...new Set(normalized)] // Remove duplicates
+  }
+
   const handleSave = () => {
     if (!exePath) { toast.error('Please select the game executable first'); return }
     if (!form.name.trim()) { toast.error('Game name is required'); return }
-    const genres = Array.isArray(form.genres) ? form.genres : form.genres.split(',').map(s=>s.trim()).filter(Boolean)
+    const genres = normalizeGenres(form.genres)
     addGame({
       ...form, exePath, genres,
       tags: Array.isArray(form.tags) ? form.tags : form.tags.split(',').map(s=>s.trim()).filter(Boolean),
