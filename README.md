@@ -1,5 +1,7 @@
-# 🎮 SpiceDeck
-
+# SpiceDeck
+<div align=centre>
+<img src='assets/banner.png'>
+</div>
 **A game launcher that actually works**
 
 Just feed it your games and launch them. Organize your library, track playtime, find deals, discover new stuff. No account required. No weird tracking. Just you and your games.
@@ -35,7 +37,7 @@ Everything works offline. No accounts. No tracking.
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 <details>
 <summary>🏠 Your Game Library</summary>
